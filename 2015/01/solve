@@ -1,0 +1,56 @@
+#!/usr/bin/env python
+
+import sys
+
+
+directions: dict = {
+    '(': 1,
+    ')': -1,
+}
+
+
+def solve1(filename: str) -> int:
+    floor = 0
+    with open(filename) as file:
+        s = file.readlines()
+        for line in s:
+            for (char, val) in directions.items():
+                floor += line.count(char) * val
+    return floor
+
+
+def solve2(filename: str) -> int:
+    char_index = 0
+    floor = 0
+    with open(filename) as file:
+        s = file.readlines()[0]
+        for char in s:
+            char_index += 1
+            floor += directions.get(char, 0)
+
+            if floor < 0:
+                return char_index
+
+
+def usage():
+    print(f"usage: {sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(sys.argv) != 3:
+        usage()
+        return
+
+    part = sys.argv[1]
+    filename = sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        usage()
+
+
+if __name__ == '__main__':
+    main()

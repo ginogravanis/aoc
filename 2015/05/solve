@@ -1,0 +1,83 @@
+#!/usr/bin/env python
+
+import sys
+import typing as t
+
+
+_vowels: str = 'aeiou'
+_forbidden_digrams: set = { 'ab', 'cd', 'pq', 'xy', }
+
+
+def _is_nice1(string: str) -> bool:
+    vowel_count = 0
+    found_double = False
+    found_forbidden_digram = False
+
+    if string[0] in _vowels:
+        vowel_count += 1
+
+    for i in range(len(string) - 1):
+        digram = string[i:i+2]
+        if digram[1] in _vowels:
+            vowel_count += 1
+
+        if digram[0] == digram[1]:
+            found_double = True
+
+        if digram in _forbidden_digrams:
+            found_forbidden_digram = True
+
+    return (vowel_count >= 3
+        and found_double
+        and not found_forbidden_digram)
+
+
+def _is_nice2(string: str) -> bool:
+    twin_digram_count = False
+    found_anagram = False
+    digrams = {}
+
+    for i in range(len(string) - 1):
+        digram = string[i:i+2]
+        twin_candidate_index = digrams.get(digram)
+        if twin_candidate_index is None:
+            digrams[digram] = i
+        else:
+            if i - twin_candidate_index >= 2:
+                twin_digram_count = True
+
+    for i in range(len(string) - 2):
+        trigram = string[i:i+3]
+        if trigram[0] == trigram[2]:
+            found_anagram = True
+
+    return twin_digram_count and found_anagram
+
+
+def solve(filename: str, is_nice: t.Callable[[str], bool]) -> int:
+    with open(filename) as file:
+        return sum(1 if is_nice(line) else 0 for line in file)
+
+
+def usage():
+    print(f"usage: {sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(sys.argv) != 3:
+        usage()
+        return
+
+    part = sys.argv[1]
+    filename = sys.argv[2]
+
+    if part == '1':
+        print(solve(filename, _is_nice1))
+    elif part == '2':
+        print(solve(filename, _is_nice2))
+    else:
+        usage()
+
+
+if __name__ == '__main__':
+    main()

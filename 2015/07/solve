@@ -1,0 +1,152 @@
+#!/usr/bin/env python
+
+import collections as _c
+import operator as _op
+import sys as _sys
+
+
+_literal = lambda x: x
+_invertop = ('NOT', _op.invert)
+_binops = {
+    'AND': _op.and_,
+    'OR': _op.or_,
+    'LSHIFT': _op.lshift,
+    'RSHIFT': _op.rshift,
+}
+
+
+def _try_int(s: str) -> int|str:
+    try:
+        res = int(s)
+    except ValueError:
+        res = s
+    return res
+
+
+Expr = _c.namedtuple('Expr', ['inputs', 'op', 'output'])
+def _parse(line: str) -> Expr:
+    expr, output = line.strip().split(' -> ')
+    if (op:=_invertop[0]) in expr:
+        _, input = expr.split(f'{op} ')
+        return Expr((_try_int(input),), _invertop[1], output)
+
+    for op_name in _binops:
+        if op_name in expr:
+            op = _binops[op_name]
+            inputs = [_try_int(i) for i in expr.split(f' {op_name} ')]
+            return Expr(tuple(inputs), op, output)
+
+    return Expr((_try_int(expr),), _literal, output)
+
+
+Node = _c.namedtuple('Node', ['outgoing', 'incoming', 'val'])
+def _topo_sort(nodes_by_incoming_edge: dict[str|None, set[Node]]) -> list[Node]:
+    ordered = []
+    available_outputs = set()
+    queue = _c.deque(nodes_by_incoming_edge[None])
+
+    while queue:
+        current = queue.popleft()
+        ordered.append(current)
+        available_outputs.add(current.outgoing)
+
+        reachable_nodes = nodes_by_incoming_edge[current.outgoing]
+        for candidate in reachable_nodes:
+            candidate_inputs_available = (
+                edge in available_outputs for edge in candidate.incoming
+            )
+            if all(candidate_inputs_available):
+                queue.append(candidate)
+    return ordered
+
+
+def _eval(expr: Expr, env: dict[str, int]) -> dict[str, int]:
+    inputs, op, output = expr
+    val = op(*[env.get(i, i) for i in inputs])
+    val_16_bit = val % (1<<16)
+    return { output: val_16_bit }
+
+
+def _make_nodes(connections):
+    connections_by_input = _c.defaultdict(set)
+    for connection in connections:
+        variable_inputs = [
+            i for i in connection.inputs
+            if not isinstance(i, int)
+        ]
+        for i in variable_inputs:
+            node = Node(
+                connection.output,
+                tuple(variable_inputs),
+                connection,
+            )
+            connections_by_input[i].add(node)
+
+        if not variable_inputs:
+            node = Node(
+                connection.output,
+                tuple(),
+                connection,
+            )
+            connections_by_input[None].add(node)
+
+    return connections_by_input
+
+
+def solve1(filename: str) -> int:
+    with open(filename) as file:
+        connections = [_parse(line) for line in file]
+
+    connections_by_input = _make_nodes(connections)
+
+    env = {}
+    for node in _topo_sort(connections_by_input):
+        expr = node.val
+        new_bindings = _eval(expr, env)
+        env.update(new_bindings)
+
+    return env['a']
+
+
+def solve2(filename: str) -> int:
+    b_override = 46065
+
+    with open(filename) as file:
+        connections = [
+            _parse(line) for line in file
+            if not line.strip().endswith('-> b')
+        ]
+    connections.append(_parse(f'{b_override} -> b'))
+    connections_by_input = _make_nodes(connections)
+
+    env = {}
+    for node in _topo_sort(connections_by_input):
+        expr = node.val
+        new_bindings = _eval(expr, env)
+        env.update(new_bindings)
+
+    return env['a']
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        usage()
+
+
+if __name__ == '__main__':
+    main()

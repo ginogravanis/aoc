@@ -1,0 +1,92 @@
+#!/usr/bin/env python
+
+import collections as _c
+import itertools as _it
+import sys as _sys
+import typing as _t
+
+
+Route = _c.namedtuple('Route', ['origin', 'destination', 'distance'])
+
+
+def _parse(line: str) -> Route:
+    route, distance = line.strip().split(' = ')
+    origin, destination = sorted(route.split(' to '))
+    return Route(origin, destination, int(distance))
+
+
+def _distance_matrix(routes: list[Route]) -> dict[str, dict[str, int]]:
+    cities = set()
+    distances = _c.defaultdict(dict)
+    for origin, destination, distance in routes:
+        cities.add(origin)
+        cities.add(destination)
+        distances[origin][destination] = distance
+    return cities, distances
+
+
+T = _t.TypeVar('T')
+def _shortest_path(cities: _c.abc.Iterable[T], distances: dict[T, dict[T, int]]) -> int:
+    result = None
+    for route in _it.permutations(cities):
+        total_distance = 0
+        for i in range(len(route) - 1):
+            start, end = sorted((route[i], route[i+1]))
+            total_distance += distances[start][end]
+
+        if result is None or total_distance < result:
+            result = total_distance
+
+    return result
+
+
+def _longest_path(cities: _c.abc.Iterable[T], distances: dict[T, dict[T, int]]) -> int:
+    result = None
+    for route in _it.permutations(cities):
+        total_distance = 0
+        for i in range(len(route) - 1):
+            start, end = sorted((route[i], route[i+1]))
+            total_distance += distances[start][end]
+
+        if result is None or total_distance > result:
+            result = total_distance
+
+    return result
+
+
+def solve1(filename: str) -> int:
+    with open(filename) as file:
+        routes = [_parse(line) for line in file]
+    cities, distances = _distance_matrix(routes)
+    return _shortest_path(cities, distances)
+
+
+def solve2(filename: str) -> int:
+    with open(filename) as file:
+        routes = [_parse(line) for line in file]
+    cities, distances = _distance_matrix(routes)
+    return _longest_path(cities, distances)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        usage()
+
+
+if __name__ == '__main__':
+    main()

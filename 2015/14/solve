@@ -1,0 +1,76 @@
+#!/usr/bin/env python
+
+import collections as _c
+import re as _re
+import sys as _sys
+
+
+Reindeer = _c.namedtuple('Reindeer', ['name', 'speed', 'stamina', 'rest'])
+
+def _parse(line: str) -> Reindeer:
+    name, speed, stamine, rest = _re.fullmatch(
+        '(\w+) can fly (\d+) km/s for (\d+) seconds, but then must rest for (\d+) seconds.',
+        line.strip(),
+    ).groups()
+    return Reindeer(
+        name,
+        int(speed),
+        int(stamine),
+        int(rest),
+    )
+
+
+def _distance_covered(reindeer: Reindeer, elapsed_time: int) -> int:
+    cycle_duration = reindeer.stamina + reindeer.rest
+    full_cycle_count = elapsed_time // cycle_duration
+    partial_cycle_time = elapsed_time % cycle_duration
+
+    full_cycle_distance = reindeer.speed * reindeer.stamina
+    total_distance = (
+        full_cycle_count * full_cycle_distance
+        + reindeer.speed * min(partial_cycle_time, reindeer.stamina)
+    )
+
+    return total_distance
+
+
+def solve1(filename: str) -> int:
+    with open(filename) as file:
+        reindeer = [_parse(line) for line in file]
+    return max(_distance_covered(r, 2503) for r in reindeer)
+
+
+def solve2(filename: str) -> int:
+    with open(filename) as file:
+        reindeer = [_parse(line) for line in file]
+
+    scores = _c.defaultdict(int)
+    for t in range(1, 2503+1):
+        _, leader = max((_distance_covered(r, t), r.name) for r in reindeer)
+        scores[leader] += 1
+
+    return max((score, name) for name, score in scores.items())[0]
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        usage()
+
+
+if __name__ == '__main__':
+    main()

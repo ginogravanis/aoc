@@ -1,0 +1,84 @@
+#!/usr/bin/env python
+
+import itertools as _it
+import sys as _sys
+
+
+def _increment(s: str) -> str:
+    s_nowrap = s.rstrip('z')
+    z_count = len(s) - len(s_nowrap)
+
+    if not s_nowrap:
+        incremented = 'a' * z_count
+    else:
+        head, tail = s_nowrap[:-1], s_nowrap[-1:]
+        new_tail = chr(ord(tail) + 1)
+        incremented = head + new_tail + 'a'*z_count
+
+    return incremented
+
+
+def _has_increasing_straight(s: str, length: int) -> bool:
+    char_codes = [ord(char) for char in s]
+    diffs = [char_codes[i+1] - char_codes[i] for i in range(len(char_codes) - 1)]
+    one_count = 0
+    for diff in diffs:
+        if diff == 1:
+            one_count += 1
+        else:
+            one_count = 0
+
+        if one_count >= (length - 1):
+            return True
+    return False
+
+
+def _has_pairs(s: str, count: int) -> bool:
+    run_lengths = [len(list(y)) for x, y in _it.groupby(s)]
+    return sum(x//2 for x in run_lengths) >= count
+
+
+def _valid_password(s: str) -> bool:
+    return (
+        _has_increasing_straight(s, 3)
+        and not any(char in s for char in 'iol')
+        and _has_pairs(s, 2)
+    )
+
+
+def _next_password(password: str) -> str:
+    pw_candidate = _increment(password)
+    while not _valid_password(pw_candidate):
+        pw_candidate = _increment(pw_candidate)
+
+    return pw_candidate
+
+
+def solve(password: str, iter_count: int) -> str:
+    for _ in range(iter_count):
+        password = _next_password(password)
+    return password
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 PASSWORD")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    password = _sys.argv[2]
+
+    if part == '1':
+        print(solve(password, 1))
+    elif part == '2':
+        print(solve(password, 2))
+    else:
+        usage()
+
+
+if __name__ == '__main__':
+    main()

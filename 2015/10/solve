@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+
+import sys as _sys
+
+
+def _las_partition(s: str) -> str:
+    groups = []
+    current_char = None
+    current_count = 0
+    i = 0
+    while i < len(s):
+        if s[i] == current_char:
+            current_count += 1
+        else:
+            if current_char is not None:
+                groups.append(f'{current_count}{current_char}')
+            current_char = s[i]
+            current_count = 1
+        i += 1
+    groups.append(f'{current_count}{current_char}')
+
+    return groups
+
+
+def _look_and_say(s: str) -> str:
+    return ''.join(_las_partition(s))
+
+
+def solve(digit_sequence: str, iterations: int) -> int:
+    assert int(digit_sequence) >= 0
+    s = digit_sequence
+    for _ in range(iterations):
+        s = _look_and_say(s)
+    return len(s)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 DIGIT_SEQUENCE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    digit_sequence = _sys.argv[2]
+
+    if part == '1':
+        print(solve(digit_sequence, 40))
+    elif part == '2':
+        print(solve(digit_sequence, 50))
+    else:
+        usage()
+
+
+if __name__ == '__main__':
+    main()

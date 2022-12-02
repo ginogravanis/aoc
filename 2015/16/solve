@@ -1,0 +1,82 @@
+#!/usr/bin/env python
+
+import sys as _sys
+
+
+_target = {
+    'children': 3,
+    'cats': 7,
+    'samoyeds': 2,
+    'pomeranians': 3,
+    'akitas': 0,
+    'vizslas': 0,
+    'goldfish': 5,
+    'trees': 3,
+    'cars': 2,
+    'perfumes': 1,
+}
+
+
+def _parse(line: str) -> tuple[int, dict[str, int]]:
+    line = line.strip().strip('Sue ')
+    delim = line.find(': ')
+    sue_num = int(line[:delim])
+    property_string = line[delim+2:]
+    properties = [prop.split(': ') for prop in property_string.split(', ')]
+
+    return (
+        sue_num,
+        {
+            k: int(v) for k, v in properties
+        }
+    )
+
+
+def solve1(filename: str) -> int:
+    with open(filename) as file:
+        sues = [_parse(line) for line in file]
+
+    for i, possessions in sues:
+        if all([_target[k] == v for k, v in possessions.items()]):
+            return i
+
+
+def solve2(filename: str) -> int:
+    with open(filename) as file:
+        sues = [_parse(line) for line in file]
+
+    for i, possessions in sues:
+        matches = []
+        for k, v in possessions.items():
+            if k in ['cats', 'trees']:
+                matches.append(v > _target[k])
+            elif k in ['pomeranians', 'goldfish']:
+                matches.append(v < _target[k])
+            else:
+                matches.append(v == _target[k])
+        if all(matches):
+            return i
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        usage()
+
+
+if __name__ == '__main__':
+    main()

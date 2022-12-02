@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+
+import json as _json
+import sys as _sys
+import typing as _t
+
+
+def _omnisum(data: _t.Any, iv=None) -> int:
+    total = 0
+    if isinstance(data, list):
+        total += sum(_omnisum(x, iv=iv) for x in data)
+    elif isinstance(data, dict):
+        if iv is None or iv not in data.values():
+            total += sum(_omnisum(k, iv=iv) + _omnisum(v, iv=iv) for k, v in data.items())
+    elif isinstance(data, int):
+        total += data
+    elif isinstance(data, str):
+        pass
+    else:
+        assert(False)
+
+    return total
+
+
+def solve(filename: str, ignore_value=None) -> int:
+    with open(filename) as file:
+        data = _json.load(file)
+    return _omnisum(data, iv=ignore_value)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve(filename))
+    elif part == '2':
+        print(solve(filename, ignore_value='red'))
+    else:
+        usage()
+
+
+if __name__ == '__main__':
+    main()

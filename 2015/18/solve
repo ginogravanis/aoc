@@ -1,0 +1,99 @@
+#!/usr/bin/env python
+
+import collections.abc as _abc
+import sys as _sys
+import typing as _t
+
+
+def _parse(line: str) -> list[int]:
+    return [1 if c=='#' else 0 for c in line.strip()]
+
+
+def _neighbours(grid: list[list[int]], x: int, y: int) -> _abc.Generator[int]:
+    for x_ in range(x-1, x+2):
+        for y_ in range(y-1, y+2):
+            if x_ == x and y_ == y:
+                continue
+            if not 0 <= x_ < len(grid):
+                continue
+            if not 0 <= y_ < len(grid[0]):
+                continue
+            yield grid[x_][y_]
+
+
+def _steps(grid: list[list[int]], count: int=1, post: _t.Callable=None) -> list[list[int]]:
+    if count <= 0:
+        return grid
+
+    width = len(grid)
+    height = len(grid[0])
+    new_grid = []
+    for x in range(width):
+        new_column = []
+        for y in range(height):
+            cell = grid[x][y]
+            neighbour_count = sum(_neighbours(grid, x, y))
+            if cell and 2 <= neighbour_count <= 3:
+                new_cell = 1
+            elif not cell and neighbour_count == 3:
+                new_cell = 1
+            else:
+                new_cell = 0
+            new_column.append(new_cell)
+        new_grid.append(new_column)
+
+    if post:
+        new_grid = post(new_grid)
+
+    return _steps(new_grid, count=count-1, post=post)
+
+
+def _sum_recur(grid: list[list[int]]) -> int:
+    return sum(sum(col) for col in grid)
+
+
+def solve1(filename: str) -> int:
+    with open(filename) as file:
+        grid = [_parse(line) for line in file]
+    final_grid = _steps(grid, count=100)
+    return _sum_recur(final_grid)
+
+
+def _corners_always_on(grid: list[list[int]]) -> list[list[int]]:
+    grid[0][0] = 1
+    grid[0][-1] = 1
+    grid[-1][0] = 1
+    grid[-1][-1] = 1
+    return grid
+
+
+def solve2(filename: str) -> int:
+    with open(filename) as file:
+        grid = [_parse(line) for line in file]
+    final_grid = _steps(grid, count=100, post=_corners_always_on)
+    return _sum_recur(final_grid)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        usage()
+        return
+
+
+if __name__ == '__main__':
+    main()

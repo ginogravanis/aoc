@@ -1,0 +1,90 @@
+#!/usr/bin/env python
+
+import collections as _c
+import re as _re
+import sys as _sys
+import typing as _t
+
+
+def _parse(file: _t.Iterable[str]) -> tuple[str, dict[str, _t.Iterable[str]]]:
+    all_lines = file.readlines()
+    molecule = all_lines[-1].strip()
+    replacements = _c.defaultdict(set)
+    for line in all_lines[:-2]:
+        pat, sub = line.strip().split(' => ')
+        replacements[pat].add(sub)
+    return molecule, replacements
+
+
+def _possible_results(
+    molecule: str,
+    recipes: dict[str, _t.Iterable[str]]
+) -> _t.Iterable[str]:
+    results = set()
+    for pattern, subs in recipes.items():
+        for match in _re.finditer(pattern, molecule):
+            start, end = match.span()
+            for sub in subs:
+                results.add(
+                    molecule[:start] + sub + molecule[end:]
+                )
+    return results
+
+
+def solve1(filename: str) -> int:
+    with open(filename) as file:
+        molecule, recipes = _parse(file)
+    possible_results = _possible_results(molecule, recipes)
+    return len(possible_results)
+
+
+def _invert_recipes(recipes: dict[str, str]) -> list[tuple[str, str]]:
+    new_recipes = []
+    for pattern, subs in recipes.items():
+        for sub in subs:
+            new_recipes.append((sub, pattern))
+    return sorted(new_recipes, key=lambda x:len(x[0]), reverse=True)
+
+
+def solve2(filename: str) -> int:
+    with open(filename) as file:
+        medicine, recipes = _parse(file)
+    recipes = _invert_recipes(recipes)
+    molecule = medicine
+    steps = 0
+    while molecule != 'e':
+        replacement_made = False
+        for pattern, sub in recipes:
+            if pattern in molecule:
+                molecule = molecule.replace(pattern, sub, 1)
+                replacement_made = True
+                steps += 1
+        if not replacement_made:
+            raise RuntimeError('No further reductions possible')
+
+    return steps
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        usage()
+        return
+
+
+if __name__ == '__main__':
+    main()

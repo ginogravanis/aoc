@@ -1,0 +1,156 @@
+#!/usr/bin/env python
+
+import collections as _c
+import collections.abc as _abc
+import itertools as _it
+import math as _math
+import sys as _sys
+import typing as _t
+
+
+Stats: tuple[int, int, int] = _c.namedtuple(
+    'Stats',
+    ['hp', 'dmg', 'armor'],
+)
+Purchase: tuple[int, Stats] = _c.namedtuple(
+    'Purchase',
+    ['cost', 'stats'],
+)
+
+
+_no_item = Purchase(0, Stats(0, 0, 0))
+_weapons = {
+    Purchase(8, Stats(0, 4, 0)),
+    Purchase(10, Stats(0, 5, 0)),
+    Purchase(25, Stats(0, 6, 0)),
+    Purchase(40, Stats(0, 7, 0)),
+    Purchase(74, Stats(0, 8, 0)),
+}
+
+_armor = {
+    Purchase(13, Stats(0, 0, 1)),
+    Purchase(31, Stats(0, 0, 2)),
+    Purchase(53, Stats(0, 0, 3)),
+    Purchase(75, Stats(0, 0, 4)),
+    Purchase(102, Stats(0, 0, 5)),
+}
+
+_rings = {
+    Purchase(25, Stats(0, 1, 0)),
+    Purchase(50, Stats(0, 2, 0)),
+    Purchase(100, Stats(0, 3, 0)),
+    Purchase(20, Stats(0, 0, 1)),
+    Purchase(40, Stats(0, 0, 2)),
+    Purchase(80, Stats(0, 0, 3)),
+}
+
+
+def _parse(data: _t.Iterable[str]) -> Stats:
+    stats = dict([line.strip().split(': ') for line in data])
+    return Stats(
+        int(stats['Hit Points']),
+        int(stats['Damage']),
+        int(stats['Armor']),
+    )
+
+
+def _battle(player, boss):
+    boss_dmg = max(1, boss.dmg - player.armor)
+    player_dmg = max(1, player.dmg - boss.armor)
+
+    player_attacks = _math.ceil(boss.hp / player_dmg)
+    boss_attacks = _math.ceil(player.hp / boss_dmg)
+
+    return player_attacks <= boss_attacks
+
+
+def _add_stats(*stats: Stats) -> Stats:
+    return Stats(
+        sum(stat.hp for stat in stats),
+        sum(stat.dmg for stat in stats),
+        sum(stat.armor for stat in stats),
+    )
+
+
+def _combine_purchases(*purchases: Purchase) -> Purchase:
+    return Purchase(
+        sum(cost for cost, stats in purchases),
+        _add_stats(*[stats for cost, stats in purchases]),
+    )
+
+
+def _weapon_choices() -> _abc.Generator[Purchase]:
+    for item in _weapons:
+        yield item
+
+
+def _armor_choices() -> _abc.Generator[Purchase]:
+    for item in [_no_item, *_armor]:
+        yield item
+
+
+def _ring_choices() -> _abc.Generator[Purchase]:
+    for combo in _it.combinations([_no_item, _no_item, *_rings], 2):
+        yield _combine_purchases(*combo)
+
+
+def _make_loadouts() -> _abc.Generator[Purchase]:
+    for loadout in _it.product(
+        _weapon_choices(),
+        _armor_choices(),
+        _ring_choices(),
+    ):
+        yield _combine_purchases(*loadout)
+
+
+def solve1(filename: str) -> int:
+    player = Stats(100, 0, 0)
+    with open(filename) as file:
+        boss = _parse(file)
+
+    lowest_cost = 10**6
+    for cost, loadout in _make_loadouts():
+        equipped_player = _add_stats(player, loadout)
+        if _battle(equipped_player, boss):
+            lowest_cost = min(lowest_cost, cost)
+
+    return lowest_cost
+
+
+def solve2(filename: str) -> int:
+    player = Stats(100, 0, 0)
+    with open(filename) as file:
+        boss = _parse(file)
+
+    highest_cost = 0
+    for cost, loadout in _make_loadouts():
+        equipped_player = _add_stats(player, loadout)
+        if not _battle(equipped_player, boss):
+            highest_cost = max(highest_cost, cost)
+
+    return highest_cost 
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        usage()
+        return
+
+
+if __name__ == '__main__':
+    main()

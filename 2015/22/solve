@@ -1,0 +1,284 @@
+#!/usr/bin/env python
+
+import collections as _c
+import functools as _ft
+import sys as _sys
+import typing as _t
+
+
+Character: tuple[int, int, int] = _c.namedtuple(
+    'Character',
+    ['hp', 'mana', 'dmg', 'armor'],
+)
+Battle: tuple[Character, Character, int, int, int, bool, bool] = _c.namedtuple(
+    'Battle',
+    [
+        'player',
+        'boss',
+        'shield_turns',
+        'poison_turns',
+        'recharge_turns',
+        'player_turn',
+        'hardmode',
+    ],
+)
+
+def _magic_missile(battle: Battle) -> Battle:
+    mana_cost = _spellbook[_magic_missile]
+    boss = battle.boss._replace(hp=battle.boss.hp - 4)
+    player = battle.player._replace(mana=battle.player.mana - mana_cost)
+
+    return battle._replace(
+        boss=boss,
+        player=player,
+    )
+
+
+def _drain(battle: Battle) -> Battle:
+    mana_cost = _spellbook[_drain]
+    boss = battle.boss._replace(hp=battle.boss.hp - 2)
+    player = battle.player._replace(
+        hp=battle.player.hp + 2,
+        mana=battle.player.mana - mana_cost,
+    )
+
+    return battle._replace(
+        boss=boss,
+        player=player,
+    )
+
+
+def _shield(battle: Battle) -> Battle:
+    mana_cost = _spellbook[_shield]
+    player = battle.player._replace(mana=battle.player.mana - mana_cost)
+    shield_turns = 6
+
+    return battle._replace(
+        player=player,
+        shield_turns=shield_turns,
+    )
+
+
+def _poison(battle: Battle) -> Battle:
+    mana_cost = _spellbook[_poison]
+    player = battle.player._replace(mana=battle.player.mana - mana_cost)
+    poison_turns = 6
+
+    return battle._replace(
+        player=player,
+        poison_turns=poison_turns,
+    )
+
+
+def _recharge(battle: Battle) -> Battle:
+    mana_cost = _spellbook[_recharge]
+    player = battle.player._replace(mana=battle.player.mana - mana_cost)
+    recharge_turns = 5
+
+    return battle._replace(
+        player=player,
+        recharge_turns=recharge_turns,
+    )
+
+
+def _boss_attack(battle: Battle) -> Battle:
+    armor = 7 if battle.shield_turns > 0 else 0
+    dmg = max(1, battle.boss.dmg - armor)
+    player = battle.player._replace(hp=battle.player.hp - dmg)
+
+    return battle._replace(player=player)
+
+
+def _hardmode_effect(battle: Battle) -> Battle:
+    if battle.player_turn:
+        player = battle.player._replace(hp=battle.player.hp - 1)
+        return battle._replace(player=player)
+    else:
+        return battle
+
+
+def _resolve_effects(battle: Battle) -> Battle:
+    player_armor = 7 if battle.shield_turns > 0 else 0
+    shield_turns = max(0, battle.shield_turns - 1)
+
+    boss_dmg = 3 if battle.poison_turns > 0 else 0
+    poison_turns = max(0, battle.poison_turns - 1)
+
+    mana_gain = 101 if battle.recharge_turns > 0 else 0
+    recharge_turns = max(0, battle.recharge_turns - 1)
+
+    player = battle.player._replace(
+        armor=player_armor,
+        mana=battle.player.mana + mana_gain,
+    )
+    boss = battle.boss._replace(
+        hp=battle.boss.hp - boss_dmg,
+    )
+
+    return battle._replace(
+        player=player,
+        boss=boss,
+        shield_turns=shield_turns,
+        poison_turns=poison_turns,
+        recharge_turns=recharge_turns,
+    )
+
+
+_spellbook: dict[_t.Callable, int] = {
+    _magic_missile: 53,
+    _drain: 73,
+    _shield: 113,
+    _poison: 173,
+    _recharge: 229,
+}
+
+
+_effect_names: dict[_t.Callable, str] = {
+    _shield: 'shield_turns',
+    _poison: 'poison_turns',
+    _recharge: 'recharge_turns',
+}
+
+
+def _is_boss_dead(battle: Battle) -> bool:
+    return battle.boss.hp <= 0
+
+
+def _is_player_dead(battle: Battle) -> bool:
+    return battle.player.hp <= 0
+
+
+def _is_effect_active(spell: _t.Callable, battle: Battle) -> bool:
+    return getattr(battle, _effect_names.get(spell, ''), 0) > 0
+
+
+def _change_turn(battle: Battle) -> Battle:
+    return battle._replace(player_turn=not battle.player_turn)
+
+
+@_ft.cache
+def _optimal_win(battle: Battle) -> tuple[int|None, list[_t.Callable]]:
+    if _is_boss_dead(battle):
+        return 0, []
+
+    if _is_player_dead(battle):
+        return None, []
+
+    battle = _change_turn(battle)
+    battle = _hardmode_effect(battle)
+    if _is_player_dead(battle):
+        return None, []
+
+    battle = _resolve_effects(battle)
+    if _is_boss_dead(battle):
+        return 0, []
+
+    if not battle.player_turn:
+        return _optimal_win(_boss_attack(battle))
+
+
+    castable_spells = [
+        (spell, mana) for spell, mana in _spellbook.items()
+        if battle.player.mana >= mana
+        and not _is_effect_active(spell, battle)
+    ]
+
+    scenarios = [
+        (*_optimal_win(spell(battle)), spell, mana) for spell, mana in castable_spells
+    ]
+
+    if all(best is None for best, _, _, _ in scenarios):
+        return None, []
+    else:
+        optimal_scenario = None
+        for best, spells, spell, spell_cost in scenarios:
+            if best is None:
+                continue
+
+            total_cost = best + spell_cost
+            if optimal_scenario is None or total_cost < optimal_scenario[0]:
+                optimal_scenario = (total_cost, [spell] + spells)
+        return optimal_scenario
+
+
+def _replay(battle: Battle, spells: list[_t.Callable]):
+    if _is_boss_dead(battle):
+        return battle
+
+    if _is_player_dead(battle):
+        return battle
+
+    battle = _change_turn(battle)
+    battle = _hardmode_effect(battle)
+    battle = _resolve_effects(battle)
+
+    if _is_boss_dead(battle):
+        return battle
+
+    if not battle.player_turn:
+        return _replay(_boss_attack(battle), spells)
+
+
+    if not spells:
+        return battle
+
+    next_spell, *remaining_spells = spells
+    mana_cost = _spellbook[next_spell]
+    player = battle.player._replace(
+        mana=battle.player.mana - mana_cost,
+    )
+    battle._replace(player=player)
+    return _replay(next_spell(battle), remaining_spells)
+
+
+def _parse(data: _t.Iterable[str]) -> Character:
+    stats = dict([line.strip().split(': ') for line in data])
+    return Character(
+        int(stats['Hit Points']),
+        0,
+        int(stats['Damage']),
+        0,
+    )
+
+
+def solve1(filename: str) -> int:
+    player = Character(50, 500, 0, 0)
+    with open(filename) as file:
+        boss = _parse(file)
+
+    battle = Battle(player, boss, 0, 0, 0, False, False)
+    return _optimal_win(battle)
+
+
+def solve2(filename: str) -> int:
+    player = Character(50, 500, 0, 0)
+    with open(filename) as file:
+        boss = _parse(file)
+
+    battle = Battle(player, boss, 0, 0, 0, False, True)
+    return _optimal_win(battle)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        usage()
+        return
+
+
+if __name__ == '__main__':
+    main()

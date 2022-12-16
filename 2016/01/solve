@@ -1,0 +1,94 @@
+#!/usr/bin/env python
+
+import collections as _c
+import sys as _sys
+
+
+Vector: tuple[int, int] = _c.namedtuple('Vector', ['x', 'y'])
+_north: Vector = Vector(x=0, y=1)
+_east: Vector = Vector(x=1, y=0)
+_south: Vector = Vector(x=0, y=-1)
+_west: Vector = Vector(x=-1, y=0)
+_headings: list[Vector] = [_north, _east, _south, _west]
+
+
+def _turn_right(direction: Vector) -> Vector:
+    return _headings[(_headings.index(direction) + 1) % 4]
+
+
+def _turn_left(direction: Vector) -> Vector:
+    return _headings[(_headings.index(direction) + 3) % 4]
+
+
+def _add(pos: Vector, heading: Vector, distance: int) -> Vector:
+    return pos._replace(
+        x=pos.x + (heading.x * distance),
+        y=pos.y + (heading.y * distance),
+    )
+
+
+def _turn(heading: Vector, side: str) -> Vector:
+    if side == 'R':
+        return _turn_right(heading)
+    elif side == 'L':
+        return _turn_left(heading)
+    else:
+        assert(False)
+
+
+def _parse(instruction: str) -> tuple[str, int]:
+    return (instruction[0], int(instruction[1:]))
+
+
+def solve1(filename: str) -> int:
+    with open(filename) as file:
+        instructions = [_parse(cmd) for cmd in file.read().strip().split(', ')]
+
+    heading = _north
+    pos = Vector(x=0, y=0)
+    for side, distance in instructions:
+        heading = _turn(heading, side)
+        pos = _add(pos, heading, distance)
+
+    return abs(pos.x) + abs(pos.y)
+
+
+def solve2(filename: str) -> int:
+    with open(filename) as file:
+        instructions = [_parse(cmd) for cmd in file.read().strip().split(', ')]
+
+    heading = _north
+    pos = Vector(x=0, y=0)
+    visited = {pos}
+    for side, distance in instructions:
+        heading = _turn(heading, side)
+        for _ in range(distance):
+            pos = _add(pos, heading, 1)
+            if pos in visited:
+                return abs(pos.x) + abs(pos.y)
+            visited.add(pos)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        usage()
+        return
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,102 @@
+#!/usr/bin/env python
+
+import functools as _ft
+import itertools as _it
+import operator as _op
+import sys as _sys
+import typing as _t
+
+
+def _sum_groups(
+    nums: set[int],
+    group_sum: int,
+    minimise_group_size: bool = False,
+) -> set[tuple[tuple[int], tuple[int]]]:
+    groups = set()
+    for n in range(1, len(nums) + 1):
+        if groups:
+            return groups
+        for group in _it.combinations(nums, n):
+            if sum(group) == group_sum:
+                remaining = nums - set(group) 
+                candidate = tuple([
+                    tuple(sorted(group)),
+                    tuple(sorted(remaining)),
+                ])
+                groups.add(candidate)
+    return set()
+
+
+def _split_evenly_in_3(
+    nums: set[int],
+) -> set[tuple[tuple[int, ...], tuple[int, ...], tuple[int, ...]]]:
+    assert(sum(nums) % 3 == 0)
+    part_sum = sum(nums) // 3
+    groupings = set()
+    for group1, remaining in _sum_groups(nums, part_sum, minimise_group_size=True):
+        for group2, group3 in _sum_groups(set(remaining), part_sum):
+            g1 = tuple(sorted(group1))
+            g2 = tuple(sorted(group2))
+            g3 = tuple(sorted(group3))
+            groupings.add((g1, g2, g3))
+    return groupings
+
+
+def _split_evenly_in_4(
+    nums: set[int],
+) -> set[tuple[tuple[int, ...], tuple[int, ...], tuple[int, ...]], tuple[int, ...]]:
+    assert(sum(nums) % 4 == 0)
+    part_sum = sum(nums) // 4
+    groupings = set()
+    for group1, remaining1 in _sum_groups(nums, part_sum, minimise_group_size=True):
+        for group2, remaining2 in _sum_groups(set(remaining1), part_sum):
+            for group3, group4 in _sum_groups(set(remaining2), part_sum):
+                g1 = tuple(sorted(group1))
+                g2 = tuple(sorted(group2))
+                g3 = tuple(sorted(group3))
+                g4 = tuple(sorted(group4))
+                groupings.add((g1, g2, g3, g4))
+    return groupings
+
+
+def _entanglement(weights: _t.Iterable[int]) -> int:
+    return _ft.reduce(_op.mul, weights)
+
+
+def solve1(filename: str) -> int:
+    with open(filename) as file:
+        weights = set(int(line) for line in file.read().splitlines())
+    splits = _split_evenly_in_3(weights)
+    return min(_entanglement(s1) for s1, s2, s3 in splits)
+
+
+def solve2(filename: str) -> int:
+    with open(filename) as file:
+        weights = set(int(line) for line in file.read().splitlines())
+    splits = _split_evenly_in_4(weights)
+    return min(_entanglement(s1) for s1, s2, s3, s4 in splits)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        usage()
+        return
+
+
+if __name__ == '__main__':
+    main()

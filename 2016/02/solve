@@ -1,0 +1,106 @@
+#!/usr/bin/env python
+
+import collections as _c
+import sys as _sys
+
+
+FingerPos: tuple[int, int] = _c.namedtuple(
+    'FingerPos',
+    [ 'row', 'col' ],
+)
+
+
+def _move(keypad: list[list[str]], finger_pos: FingerPos, move: str) -> FingerPos:
+    if move == 'U':
+        new_finger_pos = finger_pos._replace(row=finger_pos.row - 1)
+    elif move == 'R':
+        new_finger_pos = finger_pos._replace(col=finger_pos.col + 1)
+    elif move == 'D':
+        new_finger_pos = finger_pos._replace(row=finger_pos.row + 1)
+    elif move == 'L':
+        new_finger_pos = finger_pos._replace(col=finger_pos.col - 1)
+    else:
+        assert(False)
+
+    if _key(new_finger_pos, keypad):
+        return new_finger_pos
+    else:
+        return finger_pos
+
+
+def _key(pos: FingerPos, keypad: list[list[str]]) -> str:
+    if (0 <= pos.row < len(keypad)
+        and 0 <= pos.col < len(keypad[0])
+    ):
+        return keypad[pos.row][pos.col].strip()
+    else:
+        return ''
+
+
+def _find_key(keypad: list[list[str]], key: str) -> FingerPos:
+    for row in range(len(keypad)):
+        for col in range(len(keypad[0])):
+            pos = FingerPos(row=row, col=col)
+            if _key(pos, keypad) == key:
+                return pos
+
+
+def solve1(filename: str) -> int:
+    keypad = [
+        ['1', '2', '3'],
+        ['4', '5', '6'],
+        ['7', '8', '9'],
+    ]
+    with open(filename) as file:
+        move_sequences = file.read().splitlines()
+    finger_pos = _find_key(keypad, '5')
+    code = ''
+    for sequence in move_sequences:
+        for move in sequence:
+            finger_pos = _move(keypad, finger_pos, move)
+        code = code + _key(finger_pos, keypad)
+    return code
+
+
+def solve2(filename: str) -> int:
+    keypad = [
+        [ ' ', ' ', '1', ' ', ' ' ],
+        [ ' ', '2', '3', '4', ' ' ],
+        [ '5', '6', '7', '8', '9' ],
+        [ ' ', 'A', 'B', 'C', ' ' ],
+        [ ' ', ' ', 'D', ' ', ' ' ],
+    ]
+    with open(filename) as file:
+        move_sequences = file.read().splitlines()
+    finger_pos = _find_key(keypad, '5')
+    code = ''
+    for sequence in move_sequences:
+        for move in sequence:
+            finger_pos = _move(keypad, finger_pos, move)
+        code = code + _key(finger_pos, keypad)
+    return code
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        usage()
+        return
+
+
+if __name__ == '__main__':
+    main()

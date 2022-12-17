@@ -1,0 +1,85 @@
+#!/usr/bin/env python
+
+import collections as _c
+import functools as _ft
+import itertools as _it
+import sys as _sys
+import typing as _t
+
+
+Triangle: tuple[int, int, int] = _c.namedtuple(
+    'Triangle',
+    ['a', 'b', 'c'],
+)
+
+
+def _valid_triangle(t: Triangle) -> bool:
+    return (
+        t.a + t.b > t.c
+        and t.a + t.c > t.b
+        and t.b + t.c > t.a
+    )
+
+
+@_ft.singledispatch
+def _parse(line: str) -> Triangle:
+    return Triangle(*[int(x) for x in line.strip().split()])
+
+
+@_parse.register
+def _(lines: list) -> list[Triangle]:
+    assert(len(lines) == 3)
+    lines = [[int(num) for num in line.split()] for line in lines]
+    return [
+        Triangle(
+            *[
+                lines[row][col] for row in range(3)
+            ]
+        )
+        for col in range(3)
+    ]
+
+
+_T = _t.TypeVar('_T')
+def _split_every(size: int, l: list[_T]) -> _t.Generator[list[_T], None, None]:
+    for packnum in range(len(l) // size):
+        yield l[ packnum * size : (packnum + 1) * size ]
+
+
+def solve1(filename: str) -> int:
+    with open(filename) as file:
+        return sum(_valid_triangle(_parse(line)) for line in file)
+
+
+def solve2(filename: str) -> int:
+    with open(filename) as file:
+        lines = file.read().splitlines()
+    assert(len(lines) % 3 == 0)
+
+    triangles = _it.chain(*[_parse(pack) for pack in _split_every(3, lines)])
+    return sum(_valid_triangle(t) for t in triangles)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        usage()
+        return
+
+
+if __name__ == '__main__':
+    main()

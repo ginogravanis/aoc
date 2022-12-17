@@ -1,0 +1,88 @@
+#!/usr/bin/env python
+
+import collections as _c
+import re as _re
+import sys as _sys
+
+
+Room: tuple[str, int, str] = _c.namedtuple(
+    'Room',
+    ['name', 'sector', 'chksum'],
+)
+_alphabet = ''.join(chr(i) for i in range(ord('a'), ord('z') + 1))
+
+
+def _most_common_letters(s: str, n: int) -> str:
+    letter_frequencies = _c.Counter(
+        s.replace('-', '')
+    ).most_common()
+
+    return ''.join(
+        char for char, frequency in
+        sorted(letter_frequencies, key=lambda x: (-x[1], x[0]))
+    )[:n]
+
+
+def _is_real(room: Room) -> bool:
+    return room.chksum == _most_common_letters(room.name, 5)
+
+
+def _shift(c: str, n: int) -> str:
+    if c == '-':
+        return ' '
+
+    i = (_alphabet.index(c) + n) % len(_alphabet)
+    return _alphabet[i]
+
+
+def _decrypt(s: str, shift: int) -> str:
+    return ''.join(_shift(c, shift) for c in s)
+
+
+def _parse(line: str) -> Room:
+    pattern = r'(.*)-(\d+)\[(.*)\]'
+    name, sector, chksum = _re.fullmatch(pattern, line.strip()).groups()
+    return Room(name=name, sector=int(sector), chksum=chksum)
+
+
+def solve1(filename: str) -> int:
+    with open(filename) as file:
+        rooms = [_parse(line) for line in file]
+
+    return sum(room.sector for room in rooms if _is_real(room))
+
+
+def solve2(filename: str) -> int:
+    with open(filename) as file:
+        rooms = [_parse(line) for line in file]
+
+    for room in rooms:
+        if 'northpole' in _decrypt(room.name, room.sector):
+            return room.sector
+    else:
+        assert(False)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        usage()
+        return
+
+
+if __name__ == '__main__':
+    main()

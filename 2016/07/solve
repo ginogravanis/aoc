@@ -1,0 +1,113 @@
+#!/usr/bin/env python
+
+import collections as _c
+import functools as _ft
+import itertools as _it
+import sys as _sys
+import typing as _t
+
+
+IPv7: tuple[list[str], list[str]] = _c.namedtuple(
+    'IPv7',
+    ['supernet', 'hypernet'],
+)
+
+
+@_ft.singledispatch
+def _has_abba(s: str) -> bool:
+    for i, char in enumerate(s[:-3]):
+        if s[i] == s[i+3] and s[i+1] == s[i+2] and s[i] != s[i+1]:
+            return True
+    return False
+
+
+@_has_abba.register
+def _(ss: list) -> bool:
+    return any([_has_abba(s) for s in ss])
+
+
+def _supports_tls(ip: IPv7) -> bool:
+    return _has_abba(ip.supernet) and not _has_abba(ip.hypernet)
+
+
+@_ft.singledispatch
+def _find_all_aba(s: str) -> _t.Generator[str, None, None]:
+    for i, char in enumerate(s[:-2]):
+        if s[i] == s[i+2] and s[i] != s[i+1]:
+            yield s[i:i+3]
+
+
+@_find_all_aba.register
+def _(ss: list) -> _t.Generator[str, None, None]:
+    return _it.chain(*(_find_all_aba(s) for s in ss))
+
+
+def _invert_aba(aba: str) -> str:
+    a, b = aba[:2]
+    return b+a+b
+
+
+def _supports_ssl(ip: IPv7) -> bool:
+    for aba in _find_all_aba(ip.supernet):
+        for hypernet in ip.hypernet:
+            if _invert_aba(aba) in hypernet:
+                return True
+    return False
+
+
+def _split_ip(ip: str) -> list[str]:
+    if not ip:
+        return []
+
+    if ip.startswith('['):
+        i = ip.find(']')
+        return [ip[:i+1]] + _split_ip(ip[i+1:])
+    else:
+        i = ip.find('[')
+        if i == -1:
+            return [ip]
+        else:
+            return [ip[:i]] + _split_ip(ip[i:])
+
+
+def _parse(ip: str) -> IPv7:
+    components = _split_ip(ip)
+    return IPv7(
+        supernet=[c for c in components if not c.startswith('[')],
+        hypernet=[c.strip('[]') for c in components if c.startswith('[')],
+    )
+
+
+def solve1(filename: str) -> int:
+    with open(filename) as file:
+        return sum(1 for line in file if _supports_tls(_parse(line)))
+
+
+def solve2(filename: str) -> int:
+    with open(filename) as file:
+        return sum(1 for line in file if _supports_ssl(_parse(line)))
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        usage()
+        return
+
+
+if __name__ == '__main__':
+    main()

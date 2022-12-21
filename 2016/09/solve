@@ -1,0 +1,62 @@
+#!/usr/bin/env python
+
+import sys as _sys
+
+
+def _decompressed_len(s: str, recur: bool) -> int:
+    if '(' not in s:
+        return len(s)
+
+    if not s.startswith('('):
+        i = s.find('(')
+        return i + _decompressed_len(s[i:], recur)
+
+    i = s.find(')') + 1
+    marker = s[:i]
+    str_len, repeats = map(int, marker.strip('()').split('x'))
+
+    repeated = s[i:i+str_len]
+    rest = s[i+str_len:]
+    if recur:
+        repeated_len = _decompressed_len(repeated, recur) * repeats
+    else:
+        repeated_len = len(repeated) * repeats
+
+    return repeated_len + _decompressed_len(rest, recur)
+
+
+def solve1(filename: str) -> int:
+    with open(filename) as file:
+        data = file.read().strip()
+    return _decompressed_len(data, False)
+
+
+def solve2(filename: str) -> int:
+    with open(filename) as file:
+        data = file.read().strip()
+    return _decompressed_len(data, True)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        usage()
+        return
+
+
+if __name__ == '__main__':
+    main()

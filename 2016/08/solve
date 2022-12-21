@@ -1,0 +1,113 @@
+#!/usr/bin/env python
+
+import collections as _c
+import sys as _sys
+import typing as _t
+
+
+Cmd: tuple[_t.Callable, tuple[int, int]] = _c.namedtuple(
+    'Cmd',
+    ['op', 'args'],
+)
+_screen_width = 50
+_screen_height = 6
+_on = True
+_off = False
+
+
+def _count(grid: list[list[bool]], state: bool) -> int:
+    return sum(sum(row) for row in grid)
+
+
+def _show(grid: list[list[bool]]) -> str:
+    return '\n'.join(
+        ''.join(
+            '#' if cell else '.' for cell in row
+        )
+        for row in grid
+    )
+
+
+def _rotate(l: list, shift: int) -> list:
+    return l[-shift:] + l[:-shift]
+
+
+def _rect(grid: list[list], width: int, height: int):
+    for y in range(height):
+        for x in range(width):
+            grid[y][x] = _on
+    return grid
+
+
+def _rotate_row(grid: list[list], row: int, shift: int):
+    grid[row] = _rotate(grid[row], shift)
+    return grid
+
+
+def _rotate_col(grid: list[list], col: int, shift: int):
+    column = [grid[x][col] for x in range(len(grid))]
+    for i, v in enumerate(_rotate(column, shift)):
+        grid[i][col] = v
+    return grid
+
+
+def _parse(line: str) -> Cmd:
+    tokens = line.split()
+    if tokens[0] == 'rect':
+        a, b = tokens[1].split('x')
+        return Cmd(op=_rect, args=(int(a), int(b)))
+
+    if tokens[0] == 'rotate':
+        if tokens[1] == 'row':
+            a = tokens[2].split('=')[1]
+            b = tokens[-1]
+            return Cmd(op=_rotate_row, args=(int(a), int(b)))
+
+        if tokens[1] == 'column':
+            a = tokens[2].split('=')[1]
+            b = tokens[-1]
+            return Cmd(op=_rotate_col, args=(int(a), int(b)))
+    assert(False)
+
+
+def solve1(filename: str) -> int:
+    grid = [[_off]*50]*6
+    with open(filename) as file:
+        commands = [_parse(line) for line in file]
+    for cmd in commands:
+        grid = cmd.op(grid, *cmd.args)
+    return _count(grid, _on)
+
+
+def solve2(filename: str) -> str:
+    grid = [[_off]*50]*6
+    with open(filename) as file:
+        commands = [_parse(line) for line in file]
+    for cmd in commands:
+        grid = cmd.op(grid, *cmd.args)
+    return _show(grid)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        usage()
+        return
+
+
+if __name__ == '__main__':
+    main()

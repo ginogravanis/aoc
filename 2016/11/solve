@@ -1,0 +1,203 @@
+#!/usr/bin/env python
+
+import collections as _c
+import itertools as _it
+import queue as _q
+import re as _re
+import sys as _sys
+import typing as _t
+
+
+Item: tuple[str, str, int] = _c.namedtuple(
+    'Item',
+    [ 'type', 'element', 'floor' ],
+)
+ItemPair: tuple[int, int] = _c.namedtuple(
+    'ItemPair',
+    [ 'generator_floor', 'microchip_floor' ],
+)
+Lab = tuple[ItemPair, ...]
+
+
+_microchip_pattern = r'(\w+)-compatible microchip'
+_generator_pattern = r'(\w+) generator'
+
+
+def _print(me: int, lab: Lab):
+    for floor in range(3, -1, -1):
+        line = [
+            f"F{floor+1}",
+            "E" if me == floor else ".",
+        ] + [
+            ((
+                ("G" if item.generator_floor == floor else '')
+                + ("M" if item.microchip_floor == floor else '')
+            ) or ".").ljust(2)
+            for item in lab
+        ]
+        print(' '.join(line))
+
+
+def _is_lab_state_legal(lab: Lab) -> bool:
+    for i, item in enumerate(lab):
+        if (item.generator_floor < 0
+            or item.microchip_floor < 0
+            or item.generator_floor > 3
+            or item.microchip_floor > 3):
+            return False
+
+        if item.generator_floor != item.microchip_floor:
+            for j, other_item in enumerate(lab):
+                if i == j:
+                    continue
+                if item.microchip_floor == other_item.generator_floor:
+                    return False
+    return True
+
+
+def _replace(t: tuple[int, ...], i: int, val) -> tuple[int, ...]:
+    return tuple(val if i==j else item for j, item in enumerate(t))
+
+
+def _flatten(lab: Lab) -> tuple[int, ...]:
+    return sum(lab, start=tuple())
+
+
+def _unflatten(flat_lab: tuple[int, ...]) -> Lab:
+    return tuple(
+        sorted(
+            map(
+                lambda t: ItemPair(*t),
+                zip(flat_lab[::2], flat_lab[1::2]),
+            )
+        )
+    )
+
+
+def _possible_moves(me: int, lab: Lab) -> _t.Generator[tuple[int, Lab], None, None]:
+    flat_lab = _flatten(lab)
+    movable_items = [i for i, floor in enumerate(flat_lab) if floor==me]
+    for i in movable_items:
+        moved_up = _unflatten(_replace(flat_lab, i, flat_lab[i]+1))
+        if _is_lab_state_legal(moved_up):
+            yield (me+1, moved_up)
+
+        moved_down = _unflatten(_replace(flat_lab, i, flat_lab[i]-1))
+        if _is_lab_state_legal(moved_down):
+            yield (me-1, moved_down)
+
+    if len(movable_items) >= 2:
+        for i, j in _it.combinations(movable_items, 2):
+            moved_up = _unflatten(
+                _replace(
+                    _replace(flat_lab, i, flat_lab[i]+1),
+                    j,
+                    flat_lab[j]+1,
+                )
+            )
+            if _is_lab_state_legal(moved_up):
+                yield (me+1, moved_up)
+
+            moved_down = _unflatten(
+                _replace(
+                    _replace(flat_lab, i, flat_lab[i]-1),
+                    j,
+                    flat_lab[j]-1,
+                )
+            )
+            if _is_lab_state_legal(moved_down):
+                yield (me-1, moved_down)
+
+
+def _shortest_path(me: int, lab: Lab) -> int:
+    dist = {}
+    nodes = _q.PriorityQueue()
+    dist[(me, lab)] = 0
+    nodes.put((0, me, lab))
+    while not nodes.empty():
+        prev_dist, prev_me, prev_lab = nodes.get()
+        cur_dist = dist[(prev_me, prev_lab)] + 1
+        for me, lab in _possible_moves(prev_me, prev_lab):
+            if _ready_for_assembly(lab):
+                return cur_dist
+
+            best_dist = dist.get((me, lab), float('inf'))
+            if cur_dist < best_dist:
+                dist[(me, lab)] = cur_dist
+                nodes.put((cur_dist, me, lab))
+
+
+def _ready_for_assembly(lab: Lab) -> bool:
+    for item in lab:
+        if item.generator_floor != 3 or item.microchip_floor != 3:
+            return False
+    return True
+
+
+def _from_specific_items(items: list[Item]) -> Lab:
+    elements = _c.defaultdict(dict)
+    for item in items:
+        elements[item.element][item.type] = item.floor
+    lab = [
+        ItemPair(
+            generator_floor=location['generator'],
+            microchip_floor=location['microchip'],
+        )
+        for element, location
+        in elements.items()
+    ]
+    return tuple(sorted(lab))
+
+
+def _parse(line_nr: int, line: str) -> list[Item]:
+    items = []
+    for element in _re.findall(_microchip_pattern, line):
+        items.append(Item(type='microchip', element=element, floor=line_nr))
+    for element in _re.findall(_generator_pattern, line):
+        items.append(Item(type='generator', element=element, floor=line_nr))
+    return items
+
+
+def _parse_lab(filename: str) -> Lab:
+    items = []
+    with open(filename) as file:
+        for line_nr, line in enumerate(file):
+            items.extend(_parse(line_nr, line))
+    return _from_specific_items(items)
+
+
+def solve1(filename: str) -> int:
+    lab = _parse_lab(filename)
+    return _shortest_path(0, lab)
+
+
+def solve2(filename: str) -> int:
+    elerium = ItemPair(0, 0)
+    dilithium = ItemPair(0, 0)
+    lab = _parse_lab(filename) + (elerium, dilithium)
+    return _shortest_path(0, lab)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        usage()
+        return
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,83 @@
+#!/usr/bin/env python
+
+import collections as _c
+import functools as _ft
+import hashlib as _h
+import sys as _sys
+import typing as _t
+
+
+Key: tuple[int, str] = _c.namedtuple(
+    'Key',
+    [ 'index', 'key' ],
+)
+
+
+@_ft.cache
+def _key(salt: str, suffix: int, extra_rounds: int=1) -> str:
+    s = f'{salt}{suffix}'
+    digest = _h.md5(s.encode('utf8')).hexdigest()
+    for _ in range(extra_rounds):
+        digest = _h.md5(digest.encode('utf8')).hexdigest()
+    return digest
+
+
+def _first_triple(s: str) -> str|None:
+    for i, char in enumerate(s[:-2]):
+        if s[i] == s[i+1] == s[i+2]:
+            return s[i]
+    return None
+
+
+def _keys(salt: str, key_stretching: int=0) -> _t.Generator[Key, None, None]:
+    suffix = 0
+    while True:
+        key = _key(salt, suffix, extra_rounds=key_stretching)
+        tripled_letter = _first_triple(key)
+        if not tripled_letter:
+            suffix += 1
+            continue
+
+        quintuple = tripled_letter * 5
+        for i in range(1, 1000+1):
+            if quintuple in _key(salt, suffix + i, extra_rounds=key_stretching):
+                yield Key(index=suffix, key=key)
+                break
+        suffix += 1
+
+
+def solve1(salt: str) -> int:
+    for i, key in enumerate(_keys(salt), start=1):
+        if i==64:
+            return key.index
+
+
+def solve2(salt: str) -> int:
+    for i, key in enumerate(_keys(salt, key_stretching=2016), start=1):
+        if i==64:
+            return key.index
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 SALT")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    salt = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(salt))
+    elif part == '2':
+        print(solve2(salt))
+    else:
+        usage()
+        return
+
+
+if __name__ == '__main__':
+    main()

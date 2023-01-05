@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+
+import collections as _c
+import functools as _ft
+import re as _re
+import sys as _sys
+
+
+Disc = _c.namedtuple(
+    'Disc',
+    [ 'size', 'offset' ],
+)
+
+
+def _combine_discs(disc1: Disc, disc2: Disc) -> Disc:
+    new_size = disc1.size * disc2.size
+    new_offset = (-disc1.offset) % disc1.size
+    while (new_offset + disc2.offset) % disc2.size != 0:
+        new_offset += disc1.size
+
+    return Disc(size=new_size, offset=new_size - new_offset)
+
+
+def _find_alignment(discs: list[Disc]) -> int:
+    sorted_discs = sorted(discs, key=lambda d: d.size, reverse=True)
+    combined = _ft.reduce(_combine_discs, discs)
+    return combined.size - combined.offset
+
+
+def _parse(line: str) -> Disc:
+    p=r'Disc #(\d) has (\d+) positions;.* it is at position (\d+).'
+    num, size, offset = [int(x) for x in _re.fullmatch(p, line.strip()).groups()]
+    return Disc(size=size, offset=(offset + num) % size)
+
+
+def solve1(filename: str) -> int:
+    with open(filename) as file:
+        discs = [_parse(line) for line in file]
+
+    return _find_alignment(discs)
+
+
+def solve2(filename: str) -> int:
+    with open(filename) as file:
+        discs = [_parse(line) for line in file]
+    discs.append(Disc(size=11, offset=len(discs)+1))
+
+    return _find_alignment(discs)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        usage()
+        return
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,120 @@
+#!/usr/bin/env python
+
+import collections as _c
+import hashlib as _h
+import queue as _q
+import sys as _sys
+import typing as _t
+
+
+Pos: tuple[int, int] = _c.namedtuple(
+    'Pos',
+    [ 'x', 'y' ],
+)
+Doors: tuple[bool, bool, bool, bool] = _c.namedtuple(
+    'Doors',
+    [ 'up', 'down', 'left', 'right' ],
+)
+Path = str
+
+
+def _doors(path: Path, passcode: str) -> Doors:
+    s = f'{passcode}{path}'.encode('utf8')
+    digest = _h.md5(s).hexdigest()[:4]
+    return Doors(*[char in 'bcdef' for char in digest])
+
+
+def _is_valid_position(pos: Pos) -> bool:
+    return all([
+        pos.x >= 0,
+        pos.y >= 0,
+        pos.x < 4,
+        pos.y < 4,
+    ])
+
+
+def _exit_reached(pos: Pos) -> bool:
+    return pos == Pos(3, 3)
+
+
+def _possible_moves(
+    pos: Pos,
+    path: Path,
+    passcode: str,
+) -> _t.Generator[tuple[Pos, Path], None, None]:
+    doors = _doors(path, passcode)
+
+    if doors.up:
+        new_pos = pos._replace(y=pos.y-1)
+        if _is_valid_position(pos):
+            yield (new_pos, path + 'U')
+
+    if doors.right:
+        new_pos = pos._replace(x=pos.x+1)
+        if _is_valid_position(pos):
+            yield (new_pos, path + 'R')
+
+    if doors.down:
+        new_pos = pos._replace(y=pos.y+1)
+        if _is_valid_position(pos):
+            yield (new_pos, path + 'D')
+
+    if doors.left:
+        new_pos = pos._replace(x=pos.x-1)
+        if _is_valid_position(pos):
+            yield (new_pos, path + 'L')
+
+
+def solve1(passcode: str) -> Path:
+    nodes = _q.PriorityQueue()
+    nodes.put((0, '', Pos(0, 0)))
+    while not nodes.empty():
+        distance, path, pos = nodes.get()
+        if _exit_reached(pos):
+            return path
+
+        for new_pos, new_path in _possible_moves(pos, path, passcode):
+            nodes.put((len(new_path), new_path, new_pos))
+
+    assert(False)
+
+
+def solve2(passcode: str) -> int:
+    nodes = _q.PriorityQueue()
+    nodes.put((0, '', Pos(0, 0)))
+    max_path_length = 0
+    while not nodes.empty():
+        distance, path, pos = nodes.get()
+        if _exit_reached(pos):
+            max_path_length = max(max_path_length, distance)
+            continue
+
+        for new_pos, new_path in _possible_moves(pos, path, passcode):
+            nodes.put((len(new_path), new_path, new_pos))
+
+    return max_path_length
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 PASSCODE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    passcode = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(passcode))
+    elif part == '2':
+        print(solve2(passcode))
+    else:
+        usage()
+        return
+
+
+if __name__ == '__main__':
+    main()

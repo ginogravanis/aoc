@@ -66,8 +66,7 @@ def usage():
 
 def main():
     if len(_sys.argv) != 3:
-        usage()
-        return
+        return usage()
 
     part = _sys.argv[1]
     password = _sys.argv[2]
@@ -77,7 +76,7 @@ def main():
     elif part == '2':
         print(solve(password, 2))
     else:
-        usage()
+        return usage()
 
 
 if __name__ == '__main__':

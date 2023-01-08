@@ -36,8 +36,7 @@ def usage():
 
 def main():
     if len(_sys.argv) != 3:
-        usage()
-        return
+        return usage()
 
     part = _sys.argv[1]
     seed = _sys.argv[2]
@@ -47,8 +46,7 @@ def main():
     elif part == '2':
         print(solve(seed, 35651584))
     else:
-        usage()
-        return
+        return usage()
 
 
 if __name__ == '__main__':

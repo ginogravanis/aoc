@@ -28,8 +28,7 @@ def usage():
 
 def main():
     if len(sys.argv) != 3:
-        usage()
-        return
+        return usage()
 
     part = sys.argv[1]
     filename = sys.argv[2]
@@ -39,7 +38,7 @@ def main():
     elif part == '2':
         print(solve2(filename))
     else:
-        usage()
+        return usage()
 
 
 if __name__ == '__main__':

@@ -1,0 +1,81 @@
+#!/usr/bin/env python
+
+import collections as _c
+import functools as _ft
+import sys as _sys
+
+
+Range: tuple[int, int] = _c.namedtuple(
+    'Range',
+    [ 'lower', 'upper' ],
+)
+IP_RANGE = Range(lower=0, upper=4294967295)
+
+
+def _parse(line: str) -> Range:
+    x, y = line.strip().split('-')
+    return Range(lower=int(x), upper=int(y))
+
+
+def _overlap(range1: Range, range2: Range) -> bool:
+    range1, range2 = sorted([range1, range2])
+    return range2.lower in range(range1.lower, range1.upper+1)
+
+
+def _merge_ranges(range1: Range, range2: Range) -> Range:
+    return Range(
+        lower=min(range1.lower, range2.lower),
+        upper=max(range1.upper, range2.upper),
+    )
+
+def _consolidate(ranges: list[Range], new_range: Range) -> list[Range]:
+    if not ranges:
+        return [new_range]
+
+    last = ranges[-1]
+    if _overlap(last, new_range) or last.upper+1 == new_range.lower:
+        return ranges[:-1] + [_merge_ranges(last, new_range)]
+    else:
+        return ranges + [new_range]
+
+
+def _sum_ranges(ranges: list[Range]) -> int:
+    return sum(r.upper - r.lower + 1 for r in ranges)
+
+
+def solve1(filename: str) -> int:
+    with open(filename) as file:
+        ranges = sorted([_parse(line) for line in file])
+    consolidated = _ft.reduce(_consolidate, ranges, [])
+    return consolidated[0].upper+1
+
+
+def solve2(filename: str) -> int:
+    with open(filename) as file:
+        ranges = sorted([_parse(line) for line in file])
+    consolidated = _ft.reduce(_consolidate, ranges, [])
+    total_blocked = _sum_ranges(consolidated)
+    return _sum_ranges([IP_RANGE]) - _sum_ranges(consolidated)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

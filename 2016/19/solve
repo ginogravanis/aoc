@@ -1,0 +1,71 @@
+#!/usr/bin/env python
+
+import collections as _c
+import sys as _sys
+import typing as _t
+
+
+Elf: tuple[int, int] = _c.namedtuple(
+    'Elf',
+    [ 'id', 'gifts' ],
+)
+
+
+def solve1(elf_count: int) -> int:
+    elves = _c.deque(Elf(i, 1) for i in range(1, elf_count+1))
+    while len(elves) > 1:
+        winner = elves.popleft()
+        loser = elves.popleft()
+        elves.append(winner._replace(gifts=winner.gifts+loser.gifts))
+    return winner.id
+
+
+def solve2(elf_count: int) -> int:
+    nodes = [{'id': i, 'gifts': 1} for i in range(1, elf_count+1)]
+    for i in range(len(nodes)):
+        nodes[i]['prev'] = nodes[(i-1) % len(nodes)]
+        nodes[i]['next'] = nodes[(i+1) % len(nodes)]
+
+    winner = nodes[0]
+    loser = nodes[len(nodes) // 2]
+    even_nodes = len(nodes) % 2 == 0
+    while winner['prev'] != winner['next']:
+        winner['gifts'] += loser['gifts']
+
+        loser['prev']['next'] = loser['next'] 
+        loser['next']['prev'] = loser['prev']
+        even_nodes = not even_nodes
+
+        winner = winner['next']
+
+        if even_nodes:
+            loser = loser['next']['next']
+        else:
+            loser = loser['next']
+
+    return winner['id']
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 NUM_ELVES")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        usage()
+        return
+
+    part = _sys.argv[1]
+    elf_count = int(_sys.argv[2])
+
+    if part == '1':
+        print(solve1(elf_count))
+    elif part == '2':
+        print(solve2(elf_count))
+    else:
+        usage()
+        return
+
+
+if __name__ == '__main__':
+    main()

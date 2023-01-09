@@ -1,0 +1,188 @@
+#!/usr/bin/env python
+
+import collections as _c
+import functools as _ft
+import re as _re
+import sys as _sys
+
+
+SwapPositions: tuple[int, int] = _c.namedtuple(
+    'SwapPositions',
+    [ 'x', 'y' ],
+)
+SwapChars: tuple[str, str] = _c.namedtuple(
+    'SwapChars',
+    [ 'x', 'y' ],
+)
+Rotate: tuple[bool, int] = _c.namedtuple(
+    'Rotate',
+    [ 'right', 'n' ],
+)
+RotateFancy: tuple[str] = _c.namedtuple(
+    'RotateFancy',
+    [ 'char' ],
+)
+ReverseSubstring: tuple[int, int] = _c.namedtuple(
+    'ReverseSubstring',
+    [ 'start', 'end' ],
+)
+MoveChar: tuple[int, int] = _c.namedtuple(
+    'MoveChar',
+    [ 'src', 'dest' ],
+)
+Cmd = SwapPositions | SwapChars | Rotate | RotateFancy | ReverseSubstring | MoveChar
+
+
+_pattern_swap_positions = r'swap position (\d+) with position (\d+)'
+_pattern_swap_chars = r'swap letter (\w) with letter (\w)'
+_pattern_rotate = r'rotate (left|right) (\d+) steps?'
+_pattern_rotate_fancy = r'rotate based on position of letter (\w)'
+_pattern_reverse_substring = r'reverse positions (\d+) through (\d+)'
+_pattern_move_char = r'move position (\d+) to position (\d+)'
+
+
+def _parse(line: str) -> Cmd:
+    line = line.strip()
+    if match := _re.fullmatch(_pattern_swap_positions, line):
+        x, y = match.groups()
+        return SwapPositions(x=int(x), y=int(y))
+
+    elif match := _re.fullmatch(_pattern_swap_chars, line):
+        x, y = match.groups()
+        return SwapChars(x=x, y=y)
+
+    elif match := _re.fullmatch(_pattern_rotate, line):
+        right, steps = match.groups()
+        return Rotate(right=right=='right', n=int(steps))
+
+    elif match := _re.fullmatch(_pattern_rotate_fancy, line):
+        (char,) = match.groups()
+        return RotateFancy(char=char)
+
+    elif match := _re.fullmatch(_pattern_reverse_substring, line):
+        start, end = match.groups()
+        return ReverseSubstring(start=int(start), end=int(end))
+
+    elif match := _re.fullmatch(_pattern_move_char, line):
+        src, dest = match.groups()
+        return MoveChar(src=int(src), dest=int(dest))
+
+    else:
+        assert(False)
+
+
+@_ft.singledispatch
+def _apply(swap: SwapPositions, s: str) -> str:
+    x, y = sorted(swap)
+    return s[0:x] + s[y] + s[x+1:y] + s[x] + s[y+1:]
+
+
+@_apply.register
+def _(swap: SwapChars, s: str) -> str:
+    x, y = swap
+    return s.replace(x, '.').replace(y, x).replace('.', y)
+
+
+@_apply.register
+def _(rotate: Rotate, s: str) -> str:
+    n = rotate.n % len(s)
+    if rotate.right:
+        return  s[-n:] + s[:-n]
+    else:
+        return s[n:] + s[:n]
+
+
+@_apply.register
+def _(rotate: RotateFancy, s: str) -> str:
+    i = s.index(rotate.char)
+    n = (i + (2 if i >= 4 else 1)) % len(s)
+    return _apply(Rotate(right=True, n=(n)), s)
+
+
+@_apply.register
+def _(reverse_range: ReverseSubstring, s: str) -> str:
+    start, end = reverse_range
+    return s[:start] + s[start:end+1][::-1] + s[end+1:]
+
+
+@_apply.register
+def _(move: MoveChar, s: str) -> str:
+    src, dest = move
+    char = s[src]
+    removed = s[0:src] + s[src+1:]
+    return removed[:dest] + char + removed[dest:]
+
+
+@_ft.singledispatch
+def _unapply(step: SwapPositions, s: str) -> str:
+    return _apply(step, s)
+
+
+@_unapply.register
+def _(step: SwapChars, s: str) -> str:
+    return _apply(step, s)
+
+
+@_unapply.register
+def _(rotate: Rotate, s: str) -> str:
+    right, n = rotate
+    return _apply(Rotate(not right, n), s)
+
+
+@_unapply.register
+def _(rotate: RotateFancy, s: str) -> str:
+    char = rotate.char
+    results = []
+    for i in range(len(s)):
+        candidate = _apply(Rotate(False, i), s)
+        if _apply(rotate, candidate) == s:
+            results.append(candidate)
+    if len(results) != 1:
+        assert(False)
+    return results[0]
+
+
+@_unapply.register
+def _(step: ReverseSubstring, s: str) -> str:
+    return _apply(step, s)
+
+
+@_unapply.register
+def _(move: MoveChar, s: str) -> str:
+    src, dest = move
+    return _apply(MoveChar(src=dest, dest=src), s)
+
+
+def solve1(filename: str, password: str) -> int:
+    with open(filename) as file:
+        steps = [_parse(line) for line in file]
+    return _ft.reduce(lambda val, el: _apply(el, val), steps, password)
+
+
+def solve2(filename: str, password) -> int:
+    with open(filename) as file:
+        steps = [_parse(line) for line in file]
+    return _ft.reduce(lambda val, el: _unapply(el, val), reversed(steps), password)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename, 'abcdefgh'))
+    elif part == '2':
+        print(solve2(filename, 'fbgdceah'))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

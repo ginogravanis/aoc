@@ -1,0 +1,178 @@
+#!/usr/bin/env python
+
+import collections as _c
+import itertools as _it
+import sys as _sys
+import typing as _t
+
+
+Coord: tuple[int, int] = _c.namedtuple(
+    'Coord',
+    [ 'x', 'y' ],
+)
+Disk: tuple[int, int] = _c.namedtuple(
+    'Disk',
+    [ 'size', 'used' ],
+)
+Node: tuple[Coord, Disk] = _c.namedtuple(
+    'Node',
+    [ 'coord', 'disk' ],
+)
+
+
+def _parse(line: str) -> Node:
+    node_path, size, used, _, _ = line.split()
+    x, y = node_path.split('-')[1:]
+    return Node(
+        coord=Coord(
+            x=int(x[1:]),
+            y=int(y[1:]),
+        ),
+        disk=Disk(
+            size=int(size[:-1]),
+            used=int(used[:-1]),
+        ),
+    )
+
+
+def _load(filename: str) -> list[Node]:
+    with open(filename) as file:
+        return sorted(_parse(line) for line in _it.islice(file, 2, None))
+
+
+def _migration_candidates(
+    nodes: list[Node],
+) -> _t.Generator[tuple[Node, Node], None, None]:
+    for n1 in nodes:
+        if not n1.disk.used:
+            continue
+
+        for n2 in nodes:
+            if n1 is n2:
+                continue
+
+            if n1.disk.used + n2.disk.used <= n2.disk.size:
+                yield n1, n2
+
+
+def _find_empty(nodes: list[Node]) -> Coord:
+    for node in nodes:
+        if not node.disk.used:
+            return node.coord
+
+
+def _find_immovable(nodes: list[Node]) -> list[Coord]:
+    big_nodes = []
+    for node in nodes:
+        if node.disk.used > 400:
+            big_nodes.append(node.coord)
+    return big_nodes
+
+
+def _find_closest_edge(pos: Coord, wall: list[Coord], max_x: int) -> Coord:
+    east = max(wall, key=lambda coord: coord.x)
+    west = min(wall, key=lambda coord: coord.x)
+
+    if east.x == max_x:
+        return west
+    elif west.x == 0:
+        return east
+    else:
+        if _taxicab_distance(pos, east) < _taxicab_distance(pos, west):
+            return east
+        else:
+            return west
+
+
+def _to_index(x: int, y: int, nodes: list[Node]) -> int:
+    height = nodes[-1].coord.y+1
+    return x*height + y
+
+
+def _x_distance(c1: Coord, c2: Coord) -> int:
+    x = (c1.x, c2.x)
+    return max(x) - min(x) 
+
+
+def _y_distance(c1: Coord, c2: Coord) -> int:
+    y = (c1.y, c2.y)
+    return max(y) - min(y) 
+
+
+def _taxicab_distance(c1: Coord, c2: Coord) -> int:
+    return _x_distance(c1, c2) + _y_distance(c1, c2)
+
+
+def _pprint(
+    nodes: list[Node],
+    payload: Coord,
+    access_point: Coord,
+    empty_node: Coord,
+) -> None:
+    width = nodes[-1].coord.x + 1
+    height = nodes[-1].coord.y + 1
+    for y in range(height):
+        line = []
+        for x in range(width):
+            n = nodes[_to_index(x, y, nodes)]
+            if Coord(x, y) == access_point:
+                line.append('X')
+            elif Coord(x, y) == payload:
+                line.append('$')
+            elif n.disk.used == 0:
+                line.append('O')
+            elif n.disk.used > 400:
+                line.append('#')
+            else:
+                line.append('·')
+
+            if x % 5 == 4:
+                line.append(' ')
+        print(' '.join(line))
+        if y % 5 == 4:
+            print()
+
+
+def solve1(filename: str) -> int:
+    nodes = _load(filename)
+    return sum(1 for _ in _migration_candidates(nodes))
+
+
+def solve2(filename: str) -> int:
+    nodes = _load(filename)
+    payload = Coord(x=nodes[-1].coord.x, y=0)
+    access_point = Coord(0, 0)
+    empty_node = _find_empty(nodes)
+    walls = sorted(_find_immovable(nodes))
+    edge = _find_closest_edge(empty_node, walls, nodes[-1].coord.x)
+
+    shuffle_distance = _taxicab_distance(access_point, payload)
+    shuffle_steps = (shuffle_distance - 1) * 5 + 1
+
+    empty_node_distance = _taxicab_distance(empty_node, payload._replace(x=payload.x-1))
+    wall_detour = 2 * (_x_distance(empty_node, edge) + 1)
+
+    return empty_node_distance + wall_detour + shuffle_steps
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

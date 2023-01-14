@@ -1,0 +1,125 @@
+#!/usr/bin/env python
+
+import collections as _c
+import itertools as _it
+import queue as _q
+import sys as _sys
+import typing as _t
+
+
+Coord = _c.namedtuple(
+    'Coord',
+    ['x', 'y'],
+)
+Grid = list[str]
+
+
+_wall = '#'
+_floor = '.'
+_me = '0'
+
+
+def _find_all(grid: Grid, features: str) -> _t.Generator[Coord, None, None]:
+    for y, row in enumerate(grid):
+        for x, cell in enumerate(row):
+            if cell in features:
+                yield Coord(x=x, y=y)
+
+
+def _possible_moves(grid: Grid, pos: Coord) -> _t.Generator[Coord, None, None]:
+    x, y = pos
+    if grid[y+1][x] != _wall:
+        yield Coord(x=x, y=y+1)
+    if grid[y][x+1] != _wall:
+        yield Coord(x=x+1, y=y)
+    if grid[y-1][x] != _wall:
+        yield Coord(x=x, y=y-1)
+    if grid[y][x-1] != _wall:
+        yield Coord(x=x-1, y=y)
+
+
+def _shortest_path(grid: Grid, start: Coord, end: Coord) -> int:
+    visited = set()
+    visited.add(start)
+    nodes = _q.PriorityQueue()
+    nodes.put((0, start))
+    while not nodes.empty():
+        prev_dist, prev_pos = nodes.get()
+        if prev_pos == end:
+            return prev_dist
+        for new_pos in _possible_moves(grid, prev_pos):
+            if new_pos not in visited:
+                visited.add(new_pos)
+                nodes.put((prev_dist+1, new_pos))
+
+
+def _all_pairs_shortest_paths(
+    grid: Grid,
+    poi: list[Coord],
+) -> dict[str: int]:
+    shortest_paths = {}
+    for pos1, pos2 in _it.combinations(poi, 2):
+        poi1 = grid[pos1.y][pos1.x]
+        poi2 = grid[pos2.y][pos2.x]
+        shortest_path = _shortest_path(grid, pos1, pos2)
+        shortest_paths[poi1 + poi2] = shortest_path
+        shortest_paths[poi2 + poi1] = shortest_path
+    return shortest_paths
+
+
+def _shortest_salesman_route(
+    edges: dict[str, int],
+    start: str,
+    end: str = '',
+) -> int:
+    nodes = {node1 for node1, _ in edges.keys() if node1 != start}
+    shortest_route = float('inf')
+    for route in _it.permutations(nodes):
+        if end:
+            full_route = start + ''.join(route) + end
+        else:
+            full_route = start + ''.join(route)
+        total_distance = 0
+        for i in range(len(full_route) - 1):
+            total_distance += edges[full_route[i:i+2]]
+        shortest_route = min(shortest_route, total_distance)
+    return shortest_route
+
+
+def solve1(filename: str) -> int:
+    with open(filename) as file:
+        grid = file.read().splitlines()
+    poi = list(_find_all(grid, '0123456789'))
+    paths = _all_pairs_shortest_paths(grid, poi)
+    return _shortest_salesman_route(paths, _me)
+
+
+def solve2(filename: str) -> int:
+    with open(filename) as file:
+        grid = file.read().splitlines()
+    poi = list(_find_all(grid, '0123456789'))
+    paths = _all_pairs_shortest_paths(grid, poi)
+    return _shortest_salesman_route(paths, _me, _me)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

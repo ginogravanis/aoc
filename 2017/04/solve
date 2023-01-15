@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+
+import collections as _c
+import itertools as _it
+import sys as _sys
+
+
+def _has_anagram(ss: list[str]) -> bool:
+    for s1, s2 in _it.combinations(ss, 2):
+        if _c.Counter(s1) == _c.Counter(s2):
+            return True
+    return False
+
+
+def solve1(filename: str) -> int:
+    with open(filename) as file:
+        passphrases = [line.split() for line in file]
+    return len([p for p in passphrases if len(p) == len(set(p))])
+
+
+def solve2(filename: str) -> int:
+    with open(filename) as file:
+        passphrases = [line.split() for line in file]
+    return len([p for p in passphrases if not _has_anagram(p)])
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

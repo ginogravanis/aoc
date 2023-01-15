@@ -1,0 +1,50 @@
+#!/usr/bin/env python
+
+import sys as _sys
+import typing as _t
+
+
+def _run(jmp_lst: list[int], op: _t.Callable) -> int:
+    p = 0
+    counter = 0
+    while 0 <= p < len(jmp_lst):
+        offset = jmp_lst[p]
+        jmp_lst[p] = op(jmp_lst[p])
+        p += offset
+        counter += 1
+    return counter
+
+
+def solve1(filename: str) -> int:
+    with open(filename) as file:
+        jmp_list = [int(line.strip()) for line in file]
+    return _run(jmp_list, lambda x: x+1)
+
+
+def solve2(filename: str) -> int:
+    with open(filename) as file:
+        jmp_list = [int(line.strip()) for line in file]
+    return _run(jmp_list, lambda x: x-1 if x >= 3 else x+1)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,169 @@
+#!/usr/bin/env python
+
+import collections as _c
+import functools as _ft
+import itertools as _it
+import sys as _sys
+import typing as _t
+
+
+Coord: tuple[int, int] = _c.namedtuple(
+    'Coord',
+    ['x', 'y'],
+)
+
+
+def _ring_width(n: int) -> int:
+    return (n-1)*2 + 1
+
+
+def _ring_range(n: int) -> tuple[int, int]:
+    start = sum(_it.islice(_ring_sizes(), n-1)) + 1
+    ring_size = _ring_size(n)
+    return start, start + ring_size - 1
+
+
+def _ring_size(n: int) -> int:
+    return (_ring_width(n) - 1) * 4 or 1
+
+
+def _ring_sizes() -> _t.Generator[int, None, None]:
+    i = 1
+    while True:
+        yield _ring_size(i)
+        i += 1
+
+
+def _ring(n: int) -> tuple[int, int]:
+    ring = 0
+    while True:
+        ring += 1
+        ring_size = _ring_size(ring)
+        if n > ring_size:
+            n -= ring_size
+        else:
+            return ring, n - 1
+
+
+def _ring_start(ring: int) -> Coord:
+    if ring <= 1:
+        return Coord(0, 0)
+    return Coord(x=ring-1, y=2-ring)
+
+
+def _add(coord: Coord, x: int = 0, y: int = 0):
+    return coord._replace(x=coord.x+x, y=coord.y+y)
+
+
+def _from_coord(coord: Coord) -> int:
+    if coord == (0, 0):
+        return 1
+    ring = max(abs(i) for i in coord) + 1
+    ring_side = _ring_width(ring) - 1
+    side_start_coord = _ring_start(ring)
+    ring_start_val, _ = _ring_range(ring)
+    if coord.x == ring - 1 and coord.y >= side_start_coord.y:
+        ring_offset = coord.y - side_start_coord.y
+        return ring_start_val + ring_offset
+    else:
+        ring_offset = ring_side - 1
+        side_start_coord = _add(side_start_coord, y=ring_side-1)
+
+    if coord.y == ring - 1:
+        ring_offset += side_start_coord.x - coord.x
+        return ring_start_val + ring_offset
+    else:
+        ring_offset += ring_side
+        side_start_coord = _add(side_start_coord, x=-ring_side)
+
+    if coord.x == -(ring - 1):
+        ring_offset += side_start_coord.y - coord.y
+        return ring_start_val + ring_offset
+    else:
+        ring_offset += ring_side
+        side_start_coord = _add(side_start_coord, y=-ring_side)
+
+    ring_offset += coord.x - side_start_coord.x
+    return ring_start_val + ring_offset
+
+
+def _to_coord(n: int) -> Coord:
+    if n <= 1:
+        return Coord(0, 0)
+
+    ring, ring_offset = _ring(n)
+    ring_side = _ring_width(ring) - 1
+    side_start = _ring_start(ring)
+    if ring_offset < ring_side:
+        return _add(side_start, y=ring_offset)
+    else:
+        side_start = _add(side_start, x=-1, y=ring_side-1)
+        ring_offset -= ring_side
+
+    if ring_offset < ring_side:
+        return _add(side_start, x=-ring_offset)
+    else:
+        side_start = _add(side_start, x=-(ring_side-1), y=-1)
+        ring_offset -= ring_side
+
+    if ring_offset < ring_side:
+        return _add(side_start, y=-ring_offset)
+    else:
+        side_start = _add(side_start, x=1, y=-(ring_side-1))
+        ring_offset -= ring_side
+
+    return _add(side_start, x=ring_offset)
+
+
+def _manhatten_dist(coord: Coord) -> int:
+    return sum(abs(i) for i in coord)
+
+
+@_ft.cache
+def _neighbour_sum(n: int) -> int:
+    if n <= 2:
+        return 1
+    coord = _to_coord(n)
+    neighbours = []
+    for x_offset in range(-1, 2):
+        for y_offset in range(-1, 2):
+            candidate = _from_coord(_add(coord, x=x_offset, y=y_offset))
+            if candidate < n:
+                neighbours.append(candidate)
+    return sum(_neighbour_sum(neighbour) for neighbour in neighbours)
+
+
+def solve1(n: int) -> int:
+    return _manhatten_dist(_to_coord(n))
+
+
+def solve2(n: int) -> int:
+    i = 1
+    while True:
+        val = _neighbour_sum(i)
+        if val > n:
+            return val
+        i += 1
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    n = int(_sys.argv[2])
+
+    if part == '1':
+        print(solve1(n))
+    elif part == '2':
+        print(solve2(n))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

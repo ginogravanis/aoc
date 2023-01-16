@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+
+import collections as _c
+import operator as _op
+import sys as _sys
+
+
+Predicate: tuple[str, str, int] = _c.namedtuple(
+    'Predicate',
+    ['reg', 'op', 'val'],
+)
+Cmd: tuple[str, str, int, Predicate] = _c.namedtuple(
+    'Cmd',
+    ['reg', 'op', 'val', 'pred'],
+)
+_bin_op = {
+    'inc': 1,
+    'dec': -1,
+}
+_pred_op = {
+    '<':  _op.lt,
+    '<=': _op.le,
+    '>':  _op.gt,
+    '>=': _op.ge,
+    '==': _op.eq,
+    '!=': _op.ne,
+}
+
+
+def _load(filename: str) -> list[Cmd]:
+    with open(filename) as file:
+        return [_parse(line) for line in file]
+
+
+def _parse(line: str) -> Cmd:
+    reg, op, val, _, pred_reg, pred_op, pred_val = line.strip().split()
+    pred = Predicate(reg=pred_reg, op=pred_op, val=int(pred_val))
+    return Cmd(reg=reg, op=op, val=int(val), pred=pred)
+
+
+def _eval_pred(pred: Predicate, reg: dict[str, int]) -> bool:
+    reg_val = reg.get(pred.reg, 0)
+    op = _pred_op.get(pred.op)
+    return op(reg_val, pred.val)
+
+
+def _eval(cmd: Cmd, reg: dict[str, int]) -> dict[str, int]:
+    if _eval_pred(cmd.pred, reg):
+        return {cmd.reg: reg.get(cmd.reg, 0) + cmd.val * _bin_op.get(cmd.op)}
+    return {}
+
+
+def solve1(filename: str) -> int:
+    cmds = _load(filename)
+    reg = _c.defaultdict(int)
+    for cmd in cmds:
+        reg.update(_eval(cmd, reg))
+    return max(reg.values())
+
+
+def solve2(filename: str) -> int:
+    cmds = _load(filename)
+    reg = _c.defaultdict(int)
+    top = float('-inf')
+    for cmd in cmds:
+        reg.update(_eval(cmd, reg))
+        top = max(top, max(reg.values()))
+    return top
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

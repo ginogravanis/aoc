@@ -1,0 +1,82 @@
+#!/usr/bin/env python
+
+import sys as _sys
+import typing as _t
+
+
+def _find_highest(xs: list[int]) -> tuple[int, int]:
+    max_i = float('-inf')
+    max_val = float('-inf')
+    for i in range(len(xs)):
+        if xs[i] > max_val:
+            max_val = xs[i]
+            max_i = i
+    return max_i, max_val
+
+
+def _redistribute(
+    memory: tuple[int, ...],
+) -> _t.Generator[tuple[int, ...], None, None]:
+    banks = list(memory)
+    bank_count = len(banks)
+    while True:
+        max_i, max_val = _find_highest(banks)
+        new_banks = [0 if i == max_i else val for i, val in enumerate(banks)]
+        for i in range(bank_count):
+            full = max_val // bank_count
+            remainder = 1 if i <= (max_val % bank_count) - 1 else 0
+            new_banks[(max_i + i + 1) % bank_count] += full + remainder
+        banks = new_banks
+        yield tuple(banks)
+
+
+def _find_first_repeat(memory: list[int]) -> tuple[int, list[int]]:
+    distributions = {memory}
+    for n, distribution in enumerate(_redistribute(memory), start=1):
+        if distribution in distributions:
+            return n, distribution
+        else:
+            distributions.add(distribution)
+
+
+def _find_original(memory: list[int]) -> int:
+    for i, distribution in enumerate(_redistribute(memory), start=1):
+        if distribution == memory:
+            return i
+
+
+def solve1(filename: str) -> int:
+    with open(filename) as file:
+        memory = tuple(int(blocks) for blocks in file.read().split())
+    n, _ = _find_first_repeat(memory)
+    return n
+
+
+def solve2(filename: str) -> int:
+    with open(filename) as file:
+        memory = tuple(int(blocks) for blocks in file.read().split())
+    _, distribution = _find_first_repeat(memory)
+    return _find_original(distribution)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,133 @@
+#!/usr/bin/env python
+
+import collections as _c
+import functools as _ft
+import operator as _op
+import sys as _sys
+
+
+Disc: tuple[str, int, list[str]] = _c.namedtuple(
+    'Node',
+    ['name', 'weight', 'children'],
+)
+
+
+def _parse_node(node: str) -> tuple[str, int]:
+    name, weight = node.split()
+    return name, int(weight.strip('()'))
+
+
+def _parse(line: str) -> Disc:
+    if '->' in line:
+        disc, children = line.strip().split(' -> ')
+        name, weight = _parse_node(disc)
+        return Disc(name=name, weight=weight, children=children.split(', '))
+    else:
+        name, weight = _parse_node(line.strip())
+        return Disc(name=name, weight=weight, children=[])
+
+
+def _find_root(discs: list[Disc]) -> str:
+    names = set()
+    children = set()
+    for disc in discs:
+        names.add(disc.name)
+        for child in disc.children:
+            children.add(child)
+    roots = names - children
+    assert len(roots) == 1
+    return roots.pop()
+
+
+def _make_tree(discs: list[Disc]) -> dict:
+    tree = {}
+    for disc in discs:
+        tree[disc.name] = {
+            'name': disc.name,
+            'weight': disc.weight,
+            'children': [],
+        }
+    for disc in discs:
+        for child in disc.children:
+            tree[disc.name]['children'].append(tree[child])
+    return tree
+
+
+def _total_weight(tree: dict, root_name: str, _cache={}) -> int:
+    if root_name in _cache:
+        return _cache[root_name]
+
+    root = tree[root_name]
+    if not root['children']:
+        return root['weight']
+
+    total_weight = tree[root_name]['weight'] + sum(
+        _total_weight(tree, branch['name'])
+        for branch in root['children']
+    )
+    _cache[root_name] = total_weight
+    return total_weight
+
+
+def _find_imbalance(tree: dict, root: str) -> int:
+    sub_weights = [
+        (child['name'], _total_weight(tree, child['name']))
+        for child in tree[root]['children']
+    ]
+    weight_counts = _c.Counter(weight for name, weight in sub_weights)
+    if len(weight_counts) == 2:
+        common, outlier = [weight for weight, _ in weight_counts.most_common()]
+        weight_diff = common - outlier
+        for name, weight in sub_weights:
+            if weight == outlier:
+                return (
+                    _find_imbalance(tree, name)
+                    or tree[name]['weight'] + weight_diff
+                )
+    elif len(weight_counts) == 1:
+        return _ft.reduce(
+            _op.or_,
+            (
+                _find_imbalance(tree, child['name'])
+                for child in tree[root]['children']
+            ),
+        )
+    else:
+        return 0
+
+
+def solve1(filename: str) -> int:
+    with open(filename) as file:
+        discs = [_parse(line) for line in file]
+    return _find_root(discs)
+
+
+def solve2(filename: str) -> int:
+    with open(filename) as file:
+        discs = [_parse(line) for line in file]
+    root = _find_root(discs)
+    tree = _make_tree(discs)
+    return _find_imbalance(tree, root)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

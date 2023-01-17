@@ -1,0 +1,99 @@
+#!/usr/bin/env python
+
+import functools as _ft
+import operator as _op
+import sys as _sys
+
+
+def _wrap_list(xs: list, length: int) -> list:
+    xs = xs[:]
+    if len(xs) > length:
+        overhang = xs[length:]
+        xs = xs[:-len(overhang)]
+        xs[:len(overhang)] = overhang
+    return xs
+
+
+def _tie_knot(xs: list, i: int, length: int) -> list:
+    s = xs[:]
+    if length <= 1:
+        return s
+    reversed_section = []
+    for j in range(length):
+        reversed_section.append(s[(i + length-1 - j) % len(s)])
+    s[i:i+length] = reversed_section
+    return _wrap_list(s, len(xs))
+
+
+def _knotted(
+    s: str,
+    rounds: int = 1,
+    suffix: list[int] = [],
+) -> list[int]:
+    xs = list(range(256))
+    lengths = [ord(c) for c in s] + suffix
+    i = 0
+    skip_size = 0
+    for _ in range(rounds):
+        for length in lengths:
+            xs = _tie_knot(xs, i, length)
+            i = (i + length + skip_size) % len(xs)
+            skip_size += 1
+    return xs
+
+
+def _dense(sparse_hash: list[int]) -> list[int]:
+    assert len(sparse_hash) % 16 == 0
+    dense_hash = [0] * (len(sparse_hash) // 16)
+    for i in range(len(sparse_hash) // 16):
+        dense_hash[i] = _ft.reduce(
+            _op.xor,
+            sparse_hash[16*i:16*i+16],
+        )
+    return dense_hash
+
+
+def _hex(xs: list[int]) -> str:
+    return ''.join(f'{x:02x}' for x in xs)
+
+
+def _knot_hash(s: str) -> str:
+    sparse_hash = _knotted(s, rounds=64, suffix=[17, 31, 73, 47, 23])
+    dense_hash = _dense(sparse_hash)
+    return _hex(dense_hash)
+
+
+def solve1(filename: str) -> int:
+    with open(filename) as file:
+        lengths = ''.join(chr(int(x)) for x in file.read().strip().split(','))
+    knot = _knotted(lengths)
+    return knot[0] * knot[1]
+
+
+def solve2(filename: str) -> str:
+    with open(filename) as file:
+        s = file.read().strip()
+    return _knot_hash(s)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

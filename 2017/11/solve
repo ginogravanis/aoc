@@ -1,0 +1,95 @@
+#!/usr/bin/env python
+
+import collections as _c
+import enum as _e
+import functools as _ft
+import sys as _sys
+
+
+Position = _c.namedtuple(
+    'Position',
+    ['x', 'y'],
+)
+Direction = _e.Enum(
+    'Direction',
+    ['N', 'NE', 'SE', 'S', 'SW', 'NW'],
+)
+
+
+def _parse(direction: str) -> Direction:
+    return Direction[direction.strip().upper()]
+
+
+def _load(filename: str) -> list[Direction]:
+    with open(filename) as file:
+        return [_parse(direction) for direction in file.read().split(',')]
+
+
+def _step(position: Position, direction: Direction) -> Position:
+    if direction == Direction.N:
+        return position._replace(y=position.y + 1)
+    elif direction == Direction.NE:
+        return position._replace(
+            x=position.x + 1,
+            y=position.y + 1,
+        )
+    elif direction == Direction.SE:
+        return position._replace(x=position.x + 1)
+    elif direction == Direction.S:
+        return position._replace(y=position.y-1)
+    elif direction == Direction.SW:
+        return position._replace(
+            x=position.x - 1,
+            y=position.y - 1,
+        )
+    elif direction == Direction.NW:
+        return position._replace(x=position.x - 1)
+    else:
+        assert False
+
+
+def _travel(position: Position, directions: list[Direction]) -> Position:
+    return _ft.reduce(_step, directions, position)
+
+
+def _taxicab(pos: Position) -> int:
+    return max((abs(v) for v in pos))
+
+
+def solve1(filename: str) -> int:
+    directions = _load(filename)
+    pos = Position(0, 0)
+    return _taxicab(_travel(pos, directions))
+
+
+def solve2(filename: str) -> str:
+    directions = _load(filename)
+    pos = Position(0, 0)
+    max_dist = _taxicab(pos)
+    for direction in directions:
+        pos = _step(pos, direction)
+        max_dist = max(max_dist, _taxicab(pos))
+    return max_dist
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

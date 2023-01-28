@@ -1,0 +1,86 @@
+#!/usr/bin/env python
+
+import collections as _c
+import itertools as _it
+import sys as _sys
+
+
+Connection = _c.namedtuple(
+    'Connection',
+    ['left', 'right'],
+)
+Adjacency = dict[int, set[int]]
+
+
+def _parse(line: str) -> list[Connection]:
+    left, right = line.strip().split(' <-> ')
+    left_node = int(left)
+    right_nodes = [int(node) for node in right.split(', ')]
+    return [Connection(left_node, right_node) for right_node in right_nodes]
+
+
+def _load(filename: str) -> list[Connection]:
+    with open(filename) as file:
+        return list(_it.chain.from_iterable(_parse(line) for line in file))
+
+
+def _adjacency(edges: list[Connection]) -> dict[int, set[int]]:
+    adj = _c.defaultdict(set)
+    for left, right in edges:
+        adj[left].add(right)
+        adj[right].add(left)
+    return adj
+
+
+def _connected_component(adjacency: Adjacency, start: int) -> set[int]:
+    component = set()
+    queue = _c.deque([start])
+    while queue:
+        cur = queue.popleft()
+        if cur not in component:
+            component.add(cur)
+            queue.extend(adjacency[cur])
+    return component
+
+
+def _all_connected_components(adjacency: Adjacency) -> set[set[int]]:
+    nodes = set(adjacency.keys())
+    components = set()
+    while nodes:
+        component = _connected_component(adjacency, nodes.pop())
+        nodes -= component
+        components.add(tuple(component))
+    return components
+
+
+def solve1(filename: str) -> int:
+    connections = _adjacency(_load(filename))
+    return len(_connected_component(connections, 0))
+
+
+def solve2(filename: str) -> str:
+    connections = _adjacency(_load(filename))
+    return len(_all_connected_components(connections))
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

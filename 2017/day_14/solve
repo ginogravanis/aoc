@@ -1,0 +1,107 @@
+#!/usr/bin/env python
+
+import collections as _c
+import sys as _sys
+import typing as _t
+
+from knot_hash import knot_hash
+
+
+Coord: tuple[int, int] = _c.namedtuple(
+    'Coord',
+    ['x', 'y'],
+)
+
+
+def _to_bin(hex_char: str, length: int) -> str:
+    integer = int('0x' + hex_char, base=16)
+    binary = bin(integer)[2:].zfill(length)
+    return binary
+
+
+def _row(hash: str) -> str:
+    binary = ''.join(_to_bin(char, 4) for char in hash)
+    return binary
+
+
+def _grid(seed: str) -> list[str]:
+    return [
+        _row(knot_hash(f'{seed}-{row}'))
+        for row in range(128)
+    ]
+
+
+def _valid_coord(grid: list[str], coord: Coord) -> bool:
+    x, y = coord
+    height = len(grid)
+    width = len(grid[0])
+    return (0 <= x < width) and (0 <= y < height)
+
+
+def _neighbours(
+    grid: list[str],
+    pos: Coord,
+) -> _t.Generator[Coord, None, None]:
+    for x_offset, y_offset in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
+        neighbour = Coord(pos.x + x_offset, pos.y + y_offset)
+        if (
+            _valid_coord(grid, neighbour)
+            and grid[neighbour.y][neighbour.x] == '1'
+        ):
+            yield neighbour
+
+
+def _group(grid: list[str], coord: Coord) -> set[Coord]:
+    group = set()
+    queue = _c.deque([coord])
+    while queue:
+        pos = queue.pop()
+        if pos in group:
+            continue
+        group.add(pos)
+        queue.extend(_neighbours(grid, pos))
+    return group
+
+
+def _connected_group_count(grid: list[str]) -> int:
+    visited = set()
+    group_count = 0
+    for y, row in enumerate(grid):
+        for x, char in enumerate(row):
+            if char == '1' and (x, y) not in visited:
+                visited |= _group(grid, Coord(x, y))
+                group_count += 1
+    return group_count
+
+
+def solve1(seed: str) -> int:
+    grid = _grid(seed)
+    return sum(row.count('1') for row in grid)
+
+
+def solve2(seed: str) -> str:
+    grid = _grid(seed)
+    return _connected_group_count(grid)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 SEED")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    seed = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(seed))
+    elif part == '2':
+        print(solve2(seed))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

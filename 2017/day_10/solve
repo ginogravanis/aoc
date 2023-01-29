@@ -57,7 +57,7 @@ def _hex(xs: list[int]) -> str:
     return ''.join(f'{x:02x}' for x in xs)
 
 
-def _knot_hash(s: str) -> str:
+def knot_hash(s: str) -> str:
     sparse_hash = _knotted(s, rounds=64, suffix=[17, 31, 73, 47, 23])
     dense_hash = _dense(sparse_hash)
     return _hex(dense_hash)
@@ -73,7 +73,7 @@ def solve1(filename: str) -> int:
 def solve2(filename: str) -> str:
     with open(filename) as file:
         s = file.read().strip()
-    return _knot_hash(s)
+    return knot_hash(s)
 
 
 def usage():

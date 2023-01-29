@@ -1,0 +1,64 @@
+#!/usr/bin/env python
+
+import collections as _c
+import sys as _sys
+
+
+Layer = _c.namedtuple(
+    'Layer',
+    ['depth', 'range'],
+)
+
+
+def _parse(line: str) -> Layer:
+    depth, range = line.strip().split(': ')
+    return Layer(int(depth), int(range))
+
+
+def _load(filename: str) -> list[Layer]:
+    with open(filename) as file:
+        return [_parse(line) for line in file]
+
+
+def _caught(layer: Layer, offset: int = 0) -> bool:
+    return (layer.depth + offset) % (2*layer.range - 2) == 0
+
+
+def _severity(layer: Layer) -> int:
+    return layer.depth * layer.range
+
+
+def solve1(filename: str) -> int:
+    firewall = _load(filename)
+    return sum(_severity(layer) for layer in firewall if _caught(layer))
+
+
+def solve2(filename: str) -> str:
+    firewall = _load(filename)
+    delay = 0
+    while any(_caught(layer, delay) for layer in firewall):
+        delay += 1
+    return delay
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

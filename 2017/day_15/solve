@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+
+import itertools as _it
+import sys as _sys
+import typing as _t
+
+
+def _parse(line: str) -> int:
+    return int(line.strip().split()[-1])
+
+
+def _sequence(
+    init: int,
+    factor: int,
+    mod: int = 1,
+) -> _t.Generator[int, None, None]:
+    val = init
+    while True:
+        val = val * factor % 2147483647
+        if val % mod == 0:
+            yield val
+
+
+def _match(a: int, b: int, bits: int) -> bool:
+    mask = (1 << bits) - 1
+    return a & mask == b & mask
+
+
+def solve1(filename: str) -> int:
+    with open(filename) as file:
+        start_a, start_b = (_parse(line) for line in file)
+    a = _sequence(start_a, 16807)
+    b = _sequence(start_b, 48271)
+    pairs = _it.islice(zip(a, b), 0, int(4e7))
+    return sum(1 for val_a, val_b in pairs if _match(val_a, val_b, 16))
+
+
+def solve2(filename: str) -> str:
+    with open(filename) as file:
+        start_a, start_b = (_parse(line) for line in file)
+    a = _sequence(start_a, 16807, 4)
+    b = _sequence(start_b, 48271, 8)
+    pairs = _it.islice(zip(a, b), 0, int(5e6))
+    return sum(1 for val_a, val_b in pairs if _match(val_a, val_b, 16))
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

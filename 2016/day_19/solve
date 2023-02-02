@@ -2,12 +2,11 @@
 
 import collections as _c
 import sys as _sys
-import typing as _t
 
 
 Elf: tuple[int, int] = _c.namedtuple(
     'Elf',
-    [ 'id', 'gifts' ],
+    ['id', 'gifts'],
 )
 
 
@@ -32,7 +31,7 @@ def solve2(elf_count: int) -> int:
     while winner['prev'] != winner['next']:
         winner['gifts'] += loser['gifts']
 
-        loser['prev']['next'] = loser['next'] 
+        loser['prev']['next'] = loser['next']
         loser['next']['prev'] = loser['prev']
         even_nodes = not even_nodes
 

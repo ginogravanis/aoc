@@ -5,19 +5,20 @@ import sys as _sys
 import typing as _t
 
 
-def _omnisum(data: _t.Any, iv=None) -> int:
+def _rsum(data: _t.Any, iv=None) -> int:
     total = 0
     if isinstance(data, list):
-        total += sum(_omnisum(x, iv=iv) for x in data)
+        total += sum(_rsum(x, iv=iv) for x in data)
     elif isinstance(data, dict):
         if iv is None or iv not in data.values():
-            total += sum(_omnisum(k, iv=iv) + _omnisum(v, iv=iv) for k, v in data.items())
+            items = data.items()
+            total += sum(_rsum(k, iv=iv) + _rsum(v, iv=iv) for k, v in items)
     elif isinstance(data, int):
         total += data
     elif isinstance(data, str):
         pass
     else:
-        assert(False)
+        assert False
 
     return total
 
@@ -25,7 +26,7 @@ def _omnisum(data: _t.Any, iv=None) -> int:
 def solve(filename: str, ignore_value=None) -> int:
     with open(filename) as file:
         data = _json.load(file)
-    return _omnisum(data, iv=ignore_value)
+    return _rsum(data, iv=ignore_value)
 
 
 def usage():

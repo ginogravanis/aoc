@@ -5,7 +5,7 @@ import typing as t
 
 
 _vowels: str = 'aeiou'
-_forbidden_digrams: set = { 'ab', 'cd', 'pq', 'xy', }
+_forbidden_digrams: set = {'ab', 'cd', 'pq', 'xy'}
 
 
 def _is_nice1(string: str) -> bool:
@@ -28,8 +28,8 @@ def _is_nice1(string: str) -> bool:
             found_forbidden_digram = True
 
     return (vowel_count >= 3
-        and found_double
-        and not found_forbidden_digram)
+            and found_double
+            and not found_forbidden_digram)
 
 
 def _is_nice2(string: str) -> bool:

@@ -6,6 +6,7 @@ import sys as _sys
 import typing as _t
 
 
+T = _t.TypeVar('T')
 Route = _c.namedtuple('Route', ['origin', 'destination', 'distance'])
 
 
@@ -25,8 +26,10 @@ def _distance_matrix(routes: list[Route]) -> dict[str, dict[str, int]]:
     return cities, distances
 
 
-T = _t.TypeVar('T')
-def _shortest_path(cities: _c.abc.Iterable[T], distances: dict[T, dict[T, int]]) -> int:
+def _shortest_path(
+    cities: _c.abc.Iterable[T],
+    distances: dict[T, dict[T, int]],
+) -> int:
     result = None
     for route in _it.permutations(cities):
         total_distance = 0
@@ -40,7 +43,10 @@ def _shortest_path(cities: _c.abc.Iterable[T], distances: dict[T, dict[T, int]])
     return result
 
 
-def _longest_path(cities: _c.abc.Iterable[T], distances: dict[T, dict[T, int]]) -> int:
+def _longest_path(
+    cities: _c.abc.Iterable[T],
+    distances: dict[T, dict[T, int]],
+) -> int:
     result = None
     for route in _it.permutations(cities):
         total_distance = 0

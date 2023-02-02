@@ -18,7 +18,7 @@ def _sum_groups(
             return groups
         for group in _it.combinations(nums, n):
             if sum(group) == group_sum:
-                remaining = nums - set(group) 
+                remaining = nums - set(group)
                 candidate = tuple([
                     tuple(sorted(group)),
                     tuple(sorted(remaining)),
@@ -30,10 +30,13 @@ def _sum_groups(
 def _split_evenly_in_3(
     nums: set[int],
 ) -> set[tuple[tuple[int, ...], tuple[int, ...], tuple[int, ...]]]:
-    assert(sum(nums) % 3 == 0)
+    assert sum(nums) % 3 == 0
     part_sum = sum(nums) // 3
     groupings = set()
-    for group1, remaining in _sum_groups(nums, part_sum, minimise_group_size=True):
+    for group1, remaining in _sum_groups(
+        nums, part_sum,
+        minimise_group_size=True,
+    ):
         for group2, group3 in _sum_groups(set(remaining), part_sum):
             g1 = tuple(sorted(group1))
             g2 = tuple(sorted(group2))
@@ -44,11 +47,16 @@ def _split_evenly_in_3(
 
 def _split_evenly_in_4(
     nums: set[int],
-) -> set[tuple[tuple[int, ...], tuple[int, ...], tuple[int, ...]], tuple[int, ...]]:
-    assert(sum(nums) % 4 == 0)
+) -> set[
+    tuple[tuple[int, ...], tuple[int, ...], tuple[int, ...], tuple[int, ...]]
+]:
+    assert sum(nums) % 4 == 0
     part_sum = sum(nums) // 4
     groupings = set()
-    for group1, remaining1 in _sum_groups(nums, part_sum, minimise_group_size=True):
+    for group1, remaining1 in _sum_groups(
+        nums, part_sum,
+        minimise_group_size=True,
+    ):
         for group2, remaining2 in _sum_groups(set(remaining1), part_sum):
             for group3, group4 in _sum_groups(set(remaining2), part_sum):
                 g1 = tuple(sorted(group1))

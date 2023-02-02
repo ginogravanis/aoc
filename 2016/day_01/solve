@@ -33,7 +33,7 @@ def _turn(heading: Vector, side: str) -> Vector:
     elif side == 'L':
         return _turn_left(heading)
     else:
-        assert(False)
+        assert False
 
 
 def _parse(instruction: str) -> tuple[str, int]:

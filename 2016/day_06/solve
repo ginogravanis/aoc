@@ -20,13 +20,19 @@ def _letter_frequencies(lines: list[str]) -> list[_c.Counter]:
 def solve1(filename: str) -> int:
     with open(filename) as file:
         letter_frequencies = _letter_frequencies(file.read().splitlines())
-    return ''.join(counter.most_common()[0][0] for counter in letter_frequencies)
+    return ''.join(
+        counter.most_common()[0][0]
+        for counter in letter_frequencies
+    )
 
 
 def solve2(filename: str) -> int:
     with open(filename) as file:
         letter_frequencies = _letter_frequencies(file.read().splitlines())
-    return ''.join(counter.most_common()[-1][0] for counter in letter_frequencies)
+    return ''.join(
+        counter.most_common()[-1][0]
+        for counter in letter_frequencies
+    )
 
 
 def usage():

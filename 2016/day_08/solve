@@ -28,8 +28,8 @@ def _show(grid: list[list[bool]]) -> str:
     )
 
 
-def _rotate(l: list, shift: int) -> list:
-    return l[-shift:] + l[:-shift]
+def _rotate(xs: list, shift: int) -> list:
+    return xs[-shift:] + xs[:-shift]
 
 
 def _rect(grid: list[list], width: int, height: int):
@@ -67,7 +67,7 @@ def _parse(line: str) -> Cmd:
             a = tokens[2].split('=')[1]
             b = tokens[-1]
             return Cmd(op=_rotate_col, args=(int(a), int(b)))
-    assert(False)
+    assert False
 
 
 def solve1(filename: str) -> int:

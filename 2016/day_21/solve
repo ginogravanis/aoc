@@ -8,29 +8,35 @@ import sys as _sys
 
 SwapPositions: tuple[int, int] = _c.namedtuple(
     'SwapPositions',
-    [ 'x', 'y' ],
+    ['x', 'y'],
 )
 SwapChars: tuple[str, str] = _c.namedtuple(
     'SwapChars',
-    [ 'x', 'y' ],
+    ['x', 'y'],
 )
 Rotate: tuple[bool, int] = _c.namedtuple(
     'Rotate',
-    [ 'right', 'n' ],
+    ['right', 'n'],
 )
 RotateFancy: tuple[str] = _c.namedtuple(
     'RotateFancy',
-    [ 'char' ],
+    ['char'],
 )
 ReverseSubstring: tuple[int, int] = _c.namedtuple(
     'ReverseSubstring',
-    [ 'start', 'end' ],
+    ['start', 'end'],
 )
 MoveChar: tuple[int, int] = _c.namedtuple(
     'MoveChar',
-    [ 'src', 'dest' ],
+    ['src', 'dest'],
 )
-Cmd = SwapPositions | SwapChars | Rotate | RotateFancy | ReverseSubstring | MoveChar
+Cmd = (SwapPositions
+       | SwapChars
+       | Rotate
+       | RotateFancy
+       | ReverseSubstring
+       | MoveChar
+       )
 
 
 _pattern_swap_positions = r'swap position (\d+) with position (\d+)'
@@ -53,7 +59,7 @@ def _parse(line: str) -> Cmd:
 
     elif match := _re.fullmatch(_pattern_rotate, line):
         right, steps = match.groups()
-        return Rotate(right=right=='right', n=int(steps))
+        return Rotate(right=(right == 'right'), n=int(steps))
 
     elif match := _re.fullmatch(_pattern_rotate_fancy, line):
         (char,) = match.groups()
@@ -68,7 +74,7 @@ def _parse(line: str) -> Cmd:
         return MoveChar(src=int(src), dest=int(dest))
 
     else:
-        assert(False)
+        assert False
 
 
 @_ft.singledispatch
@@ -87,7 +93,7 @@ def _(swap: SwapChars, s: str) -> str:
 def _(rotate: Rotate, s: str) -> str:
     n = rotate.n % len(s)
     if rotate.right:
-        return  s[-n:] + s[:-n]
+        return s[-n:] + s[:-n]
     else:
         return s[n:] + s[:n]
 
@@ -131,14 +137,13 @@ def _(rotate: Rotate, s: str) -> str:
 
 @_unapply.register
 def _(rotate: RotateFancy, s: str) -> str:
-    char = rotate.char
     results = []
     for i in range(len(s)):
         candidate = _apply(Rotate(False, i), s)
         if _apply(rotate, candidate) == s:
             results.append(candidate)
     if len(results) != 1:
-        assert(False)
+        assert False
     return results[0]
 
 
@@ -162,7 +167,9 @@ def solve1(filename: str, password: str) -> int:
 def solve2(filename: str, password) -> int:
     with open(filename) as file:
         steps = [_parse(line) for line in file]
-    return _ft.reduce(lambda val, el: _unapply(el, val), reversed(steps), password)
+    return _ft.reduce(
+        lambda val, el: _unapply(el, val), reversed(steps), password
+    )
 
 
 def usage():

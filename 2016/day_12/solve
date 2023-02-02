@@ -3,7 +3,7 @@
 import sys as _sys
 
 
-def _eval(cmd: tuple[str, ...], registers: dict[str, int]) -> int|None:
+def _eval(cmd: tuple[str, ...], registers: dict[str, int]) -> int | None:
     if cmd[0] == 'cpy':
         _, x, y = cmd
         registers[y] = int(registers.get(x, x))
@@ -18,7 +18,7 @@ def _eval(cmd: tuple[str, ...], registers: dict[str, int]) -> int|None:
         if int(registers.get(x, x)) != 0:
             return int(y)
     else:
-        assert(False)
+        assert False
 
 
 def _run(program: list[tuple[str, ...]], registers: dict[str, int], ic: int):
@@ -34,7 +34,7 @@ def _parse(line: str) -> tuple[str, ...]:
 def solve1(filename: str) -> int:
     with open(filename) as file:
         program = [_parse(line) for line in file]
-    registers = { 'a': 0, 'b': 0, 'c': 0, 'd': 0 }
+    registers = {'a': 0, 'b': 0, 'c': 0, 'd': 0}
     _run(program, registers, 0)
     return registers['a']
 
@@ -42,7 +42,7 @@ def solve1(filename: str) -> int:
 def solve2(filename: str) -> int:
     with open(filename) as file:
         program = [_parse(line) for line in file]
-    registers = { 'a': 0, 'b': 0, 'c': 1, 'd': 0 }
+    registers = {'a': 0, 'b': 0, 'c': 1, 'd': 0}
     _run(program, registers, 0)
     return registers['a']
 

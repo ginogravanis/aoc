@@ -8,15 +8,15 @@ import typing as _t
 
 Coord: tuple[int, int] = _c.namedtuple(
     'Coord',
-    [ 'x', 'y' ],
+    ['x', 'y'],
 )
 Disk: tuple[int, int] = _c.namedtuple(
     'Disk',
-    [ 'size', 'used' ],
+    ['size', 'used'],
 )
 Node: tuple[Coord, Disk] = _c.namedtuple(
     'Node',
-    [ 'coord', 'disk' ],
+    ['coord', 'disk'],
 )
 
 
@@ -91,12 +91,12 @@ def _to_index(x: int, y: int, nodes: list[Node]) -> int:
 
 def _x_distance(c1: Coord, c2: Coord) -> int:
     x = (c1.x, c2.x)
-    return max(x) - min(x) 
+    return max(x) - min(x)
 
 
 def _y_distance(c1: Coord, c2: Coord) -> int:
     y = (c1.y, c2.y)
-    return max(y) - min(y) 
+    return max(y) - min(y)
 
 
 def _taxicab_distance(c1: Coord, c2: Coord) -> int:
@@ -149,7 +149,10 @@ def solve2(filename: str) -> int:
     shuffle_distance = _taxicab_distance(access_point, payload)
     shuffle_steps = (shuffle_distance - 1) * 5 + 1
 
-    empty_node_distance = _taxicab_distance(empty_node, payload._replace(x=payload.x-1))
+    empty_node_distance = _taxicab_distance(
+        empty_node,
+        payload._replace(x=payload.x-1),
+    )
     wall_detour = 2 * (_x_distance(empty_node, edge) + 1)
 
     return empty_node_distance + wall_detour + shuffle_steps

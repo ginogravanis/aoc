@@ -27,7 +27,9 @@ def _optimise_add(program: list[Cmd], start: int, end: int) -> bool:
     if len(additions) != 2 or loop_counter_direction not in (-1, 1):
         return False
 
-    other, iterations = [(k, v) for k, v in additions.items() if k != loop_counter][0]
+    other, iterations = [
+        (k, v) for k, v in additions.items() if k != loop_counter
+    ][0]
     if iterations != 1:
         return False
 
@@ -67,7 +69,7 @@ def _optimise_mul(program: list[Cmd], start: int, end: int) -> bool:
 
 
 def _diff(program, optimised) -> str:
-    assert(len(program) == len(optimised))
+    assert len(program) == len(optimised)
     lines = [
         "     raw src        optimised",
         "     -------        ---------",
@@ -104,7 +106,7 @@ def _optimise(program: list[Cmd]) -> list[Cmd]:
                 if dist < 0:
                     (_optimise_add(optimised, i+dist, i)
                         or _optimise_mul(optimised, i+dist, i)
-                    )
+                     )
     return optimised
 
 
@@ -136,7 +138,9 @@ def _run(
             registers[y] = 0
         elif cmd[0] == 'mul':
             _, x, y, z = cmd
-            registers[x] += int(registers.get(y, y)) * abs(int(registers.get(z, z)))
+            y_ = int(registers.get(y, y))
+            z_ = abs(int(registers.get(z, z)))
+            registers[x] += y_ * z_
             registers[z] = 0
         elif cmd[0] == 'jmp':
             _, x = cmd
@@ -151,7 +155,7 @@ def _run(
             _, x = cmd
             yield str(registers.get(x, x))
         else:
-            assert(False)
+            assert False
         ic += 1
 
 

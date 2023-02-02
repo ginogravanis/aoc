@@ -20,7 +20,8 @@ Ingredient = _c.namedtuple(
 
 def _parse(line: str) -> dict:
     name, capacity, durability, flavor, texture, calories = _re.fullmatch(
-        '(\w+): capacity (-?\d+), durability (-?\d+), flavor (-?\d+), texture (-?\d+), calories (-?\d+)',
+        r'(\w+): capacity (-?\d+), durability (-?\d+), flavor (-?\d+),'
+        r' texture (-?\d+), calories (-?\d+)',
         line.strip(),
     ).groups()
     return Ingredient(
@@ -43,7 +44,7 @@ def _splits(amount: int, count: int) -> list[int]:
 
 
 def _cookie_score(ingredients: list[Ingredient], amounts: list[int]) -> int:
-    assert(len(ingredients) == len(amounts))
+    assert len(ingredients) == len(amounts)
     attributes = set(Ingredient._fields) - set(['name', 'calories'])
     total_score = 1
     for attribute in attributes:

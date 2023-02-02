@@ -12,7 +12,6 @@ def solve1(filename: str) -> int:
     return total
 
 
-
 def solve2(filename: str) -> int:
     total = 0
     with open(filename) as file:

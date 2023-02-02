@@ -10,11 +10,11 @@ import typing as _t
 
 Item: tuple[str, str, int] = _c.namedtuple(
     'Item',
-    [ 'type', 'element', 'floor' ],
+    ['type', 'element', 'floor'],
 )
 ItemPair: tuple[int, int] = _c.namedtuple(
     'ItemPair',
-    [ 'generator_floor', 'microchip_floor' ],
+    ['generator_floor', 'microchip_floor'],
 )
 Lab = tuple[ItemPair, ...]
 
@@ -40,10 +40,12 @@ def _print(me: int, lab: Lab):
 
 def _is_lab_state_legal(lab: Lab) -> bool:
     for i, item in enumerate(lab):
-        if (item.generator_floor < 0
+        if (
+            item.generator_floor < 0
             or item.microchip_floor < 0
             or item.generator_floor > 3
-            or item.microchip_floor > 3):
+            or item.microchip_floor > 3
+        ):
             return False
 
         if item.generator_floor != item.microchip_floor:
@@ -56,7 +58,7 @@ def _is_lab_state_legal(lab: Lab) -> bool:
 
 
 def _replace(t: tuple[int, ...], i: int, val) -> tuple[int, ...]:
-    return tuple(val if i==j else item for j, item in enumerate(t))
+    return tuple(val if i == j else item for j, item in enumerate(t))
 
 
 def _flatten(lab: Lab) -> tuple[int, ...]:
@@ -74,9 +76,12 @@ def _unflatten(flat_lab: tuple[int, ...]) -> Lab:
     )
 
 
-def _possible_moves(me: int, lab: Lab) -> _t.Generator[tuple[int, Lab], None, None]:
+def _possible_moves(
+    me: int,
+    lab: Lab,
+) -> _t.Generator[tuple[int, Lab], None, None]:
     flat_lab = _flatten(lab)
-    movable_items = [i for i, floor in enumerate(flat_lab) if floor==me]
+    movable_items = [i for i, floor in enumerate(flat_lab) if floor == me]
     for i in movable_items:
         moved_up = _unflatten(_replace(flat_lab, i, flat_lab[i]+1))
         if _is_lab_state_legal(moved_up):

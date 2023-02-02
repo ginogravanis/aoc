@@ -20,7 +20,8 @@ def _increment(s: str) -> str:
 
 def _has_increasing_straight(s: str, length: int) -> bool:
     char_codes = [ord(char) for char in s]
-    diffs = [char_codes[i+1] - char_codes[i] for i in range(len(char_codes) - 1)]
+    code_count = len(char_codes)
+    diffs = [char_codes[i+1] - char_codes[i] for i in range(code_count - 1)]
     one_count = 0
     for diff in diffs:
         if diff == 1:

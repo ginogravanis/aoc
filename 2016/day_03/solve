@@ -7,6 +7,7 @@ import sys as _sys
 import typing as _t
 
 
+_T = _t.TypeVar('_T')
 Triangle: tuple[int, int, int] = _c.namedtuple(
     'Triangle',
     ['a', 'b', 'c'],
@@ -28,7 +29,7 @@ def _parse(line: str) -> Triangle:
 
 @_parse.register
 def _(lines: list) -> list[Triangle]:
-    assert(len(lines) == 3)
+    assert len(lines) == 3
     lines = [[int(num) for num in line.split()] for line in lines]
     return [
         Triangle(
@@ -40,10 +41,12 @@ def _(lines: list) -> list[Triangle]:
     ]
 
 
-_T = _t.TypeVar('_T')
-def _split_every(size: int, l: list[_T]) -> _t.Generator[list[_T], None, None]:
-    for packnum in range(len(l) // size):
-        yield l[ packnum * size : (packnum + 1) * size ]
+def _split_every(
+    size: int,
+    xs: list[_T],
+) -> _t.Generator[list[_T], None, None]:
+    for packnum in range(len(xs) // size):
+        yield xs[packnum*size:(packnum + 1)*size]
 
 
 def solve1(filename: str) -> int:
@@ -54,7 +57,7 @@ def solve1(filename: str) -> int:
 def solve2(filename: str) -> int:
     with open(filename) as file:
         lines = file.read().splitlines()
-    assert(len(lines) % 3 == 0)
+    assert len(lines) % 3 == 0
 
     triangles = _it.chain(*[_parse(pack) for pack in _split_every(3, lines)])
     return sum(_valid_triangle(t) for t in triangles)

@@ -3,7 +3,7 @@
 import sys
 
 
-def binary(number: int, digits: int=0, reverse=False) -> str:
+def binary(number: int, digits: int = 0, reverse=False) -> str:
     bits = f"{{:0{digits}b}}".format(number)
     if reverse:
         return bits[::-1]
@@ -24,8 +24,8 @@ class BitGrid():
     def on(self, coord_a: tuple[int, int], coord_b: tuple[int, int]):
         ax, ay = coord_a
         bx, by = coord_b
-        assert(0 <= x < self.width for x in [ax, bx])
-        assert(0 <= y < self.height for y in [ay, by])
+        assert (0 <= x < self.width for x in [ax, bx])
+        assert (0 <= y < self.height for y in [ay, by])
 
         for y in range(min(ay, by), max(ay, by)+1):
             self.grid[y] |= bitmask(min(ax, bx), max(ax, bx))
@@ -33,8 +33,8 @@ class BitGrid():
     def off(self, coord_a: tuple[int, int], coord_b: tuple[int, int]):
         ax, ay = coord_a
         bx, by = coord_b
-        assert(0 <= x < self.width for x in [ax, bx])
-        assert(0 <= y < self.height for y in [ay, by])
+        assert (0 <= x < self.width for x in [ax, bx])
+        assert (0 <= y < self.height for y in [ay, by])
 
         for y in range(min(ay, by), max(ay, by)+1):
             self.grid[y] &= ~bitmask(min(ax, bx), max(ax, bx))
@@ -42,8 +42,8 @@ class BitGrid():
     def toggle(self, coord_a: tuple[int, int], coord_b: tuple[int, int]):
         ax, ay = coord_a
         bx, by = coord_b
-        assert(0 <= x < self.width for x in [ax, bx])
-        assert(0 <= y < self.height for y in [ay, by])
+        assert (0 <= x < self.width for x in [ax, bx])
+        assert (0 <= y < self.height for y in [ay, by])
 
         for y in range(min(ay, by), max(ay, by)+1):
             self.grid[y] ^= bitmask(min(ax, bx), max(ax, bx))
@@ -66,7 +66,10 @@ _commands1 = {
 }
 
 
-def _parse_command(string: str, commands: dict) -> tuple[str, tuple[int, int], tuple[int, int]]:
+def _parse_command(
+    string: str,
+    commands: dict,
+) -> tuple[str, tuple[int, int], tuple[int, int]]:
     for cmd, fun in commands.items():
         if string.startswith(cmd):
             raw_coords = string.split(f"{cmd} ")[1].split(" through ")
@@ -95,14 +98,14 @@ class IntGrid():
         x2 = max(coord_a[0], coord_b[0])
         y1 = min(coord_a[1], coord_b[1])
         y2 = max(coord_a[1], coord_b[1])
-        assert(0 <= x < self.width for x in [x1, x2])
-        assert(0 <= y < self.height for y in [y1, y2])
+        assert (0 <= x < self.width for x in [x1, x2])
+        assert (0 <= y < self.height for y in [y1, y2])
 
         for y in range(y1, y2+1):
             row = self.grid[y]
             self.grid[y] = (
                 row[:x1]
-                + [ n+1 for n in row[x1:x2+1] ]
+                + [n+1 for n in row[x1:x2+1]]
                 + row[x2+1:]
             )
 
@@ -111,14 +114,14 @@ class IntGrid():
         x2 = max(coord_a[0], coord_b[0])
         y1 = min(coord_a[1], coord_b[1])
         y2 = max(coord_a[1], coord_b[1])
-        assert(0 <= x < self.width for x in [x1, x2])
-        assert(0 <= y < self.height for y in [y1, y2])
+        assert (0 <= x < self.width for x in [x1, x2])
+        assert (0 <= y < self.height for y in [y1, y2])
 
         for y in range(y1, y2+1):
             row = self.grid[y]
             self.grid[y] = (
                 row[:x1]
-                + [ max(0, n-1) for n in row[x1:x2+1] ]
+                + [max(0, n-1) for n in row[x1:x2+1]]
                 + row[x2+1:]
             )
 
@@ -127,14 +130,14 @@ class IntGrid():
         x2 = max(coord_a[0], coord_b[0])
         y1 = min(coord_a[1], coord_b[1])
         y2 = max(coord_a[1], coord_b[1])
-        assert(0 <= x < self.width for x in [x1, x2])
-        assert(0 <= y < self.height for y in [y1, y2])
+        assert (0 <= x < self.width for x in [x1, x2])
+        assert (0 <= y < self.height for y in [y1, y2])
 
         for y in range(y1, y2+1):
             row = self.grid[y]
             self.grid[y] = (
                 row[:x1]
-                + [ n+2 for n in row[x1:x2+1] ]
+                + [n+2 for n in row[x1:x2+1]]
                 + row[x2+1:]
             )
 

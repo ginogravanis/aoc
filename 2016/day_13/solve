@@ -29,9 +29,8 @@ def _possible_moves(pos: Pos, seed: int) -> list[Pos]:
     ]
 
 
-
 def _min_distance(start: Pos, end: Pos, seed: int) -> int:
-    dist = { start: 0 }
+    dist = {start: 0}
     nodes = _q.PriorityQueue()
     nodes.put((0, start))
     while not nodes.empty():
@@ -40,7 +39,7 @@ def _min_distance(start: Pos, end: Pos, seed: int) -> int:
         for move in _possible_moves(prev_pos, seed):
             if move == end:
                 return cur_dist
-            
+
             best_dist = dist.get(move, float('inf'))
             if cur_dist < best_dist:
                 dist[move] = cur_dist

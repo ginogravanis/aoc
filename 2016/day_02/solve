@@ -6,11 +6,15 @@ import sys as _sys
 
 FingerPos: tuple[int, int] = _c.namedtuple(
     'FingerPos',
-    [ 'row', 'col' ],
+    ['row', 'col'],
 )
 
 
-def _move(keypad: list[list[str]], finger_pos: FingerPos, move: str) -> FingerPos:
+def _move(
+    keypad: list[list[str]],
+    finger_pos: FingerPos,
+    move: str,
+) -> FingerPos:
     if move == 'U':
         new_finger_pos = finger_pos._replace(row=finger_pos.row - 1)
     elif move == 'R':
@@ -20,7 +24,7 @@ def _move(keypad: list[list[str]], finger_pos: FingerPos, move: str) -> FingerPo
     elif move == 'L':
         new_finger_pos = finger_pos._replace(col=finger_pos.col - 1)
     else:
-        assert(False)
+        assert False
 
     if _key(new_finger_pos, keypad):
         return new_finger_pos
@@ -29,9 +33,7 @@ def _move(keypad: list[list[str]], finger_pos: FingerPos, move: str) -> FingerPo
 
 
 def _key(pos: FingerPos, keypad: list[list[str]]) -> str:
-    if (0 <= pos.row < len(keypad)
-        and 0 <= pos.col < len(keypad[0])
-    ):
+    if (0 <= pos.row < len(keypad) and 0 <= pos.col < len(keypad[0])):
         return keypad[pos.row][pos.col].strip()
     else:
         return ''
@@ -64,11 +66,11 @@ def solve1(filename: str) -> int:
 
 def solve2(filename: str) -> int:
     keypad = [
-        [ ' ', ' ', '1', ' ', ' ' ],
-        [ ' ', '2', '3', '4', ' ' ],
-        [ '5', '6', '7', '8', '9' ],
-        [ ' ', 'A', 'B', 'C', ' ' ],
-        [ ' ', ' ', 'D', ' ', ' ' ],
+        [' ', ' ', '1', ' ', ' '],
+        [' ', '2', '3', '4', ' '],
+        ['5', '6', '7', '8', '9'],
+        [' ', 'A', 'B', 'C', ' '],
+        [' ', ' ', 'D', ' ', ' '],
     ]
     with open(filename) as file:
         move_sequences = file.read().splitlines()

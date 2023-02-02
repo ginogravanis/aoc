@@ -20,7 +20,7 @@ def _eval(cmd: tuple[str, ...], machine: dict[str, int]) -> int:
         if machine[cmd[1]] == 1:
             offset = int(cmd[2])
     else:
-        assert(False)
+        assert False
 
     machine['ip'] += offset
 

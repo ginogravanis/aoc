@@ -7,7 +7,7 @@ import sys as _sys
 
 Range: tuple[int, int] = _c.namedtuple(
     'Range',
-    [ 'lower', 'upper' ],
+    ['lower', 'upper'],
 )
 IP_RANGE = Range(lower=0, upper=4294967295)
 
@@ -27,6 +27,7 @@ def _merge_ranges(range1: Range, range2: Range) -> Range:
         lower=min(range1.lower, range2.lower),
         upper=max(range1.upper, range2.upper),
     )
+
 
 def _consolidate(ranges: list[Range], new_range: Range) -> list[Range]:
     if not ranges:
@@ -54,7 +55,6 @@ def solve2(filename: str) -> int:
     with open(filename) as file:
         ranges = sorted([_parse(line) for line in file])
     consolidated = _ft.reduce(_consolidate, ranges, [])
-    total_blocked = _sum_ranges(consolidated)
     return _sum_ranges([IP_RANGE]) - _sum_ranges(consolidated)
 
 

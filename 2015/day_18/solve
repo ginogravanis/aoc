@@ -6,7 +6,7 @@ import typing as _t
 
 
 def _parse(line: str) -> list[int]:
-    return [1 if c=='#' else 0 for c in line.strip()]
+    return [1 if c == '#' else 0 for c in line.strip()]
 
 
 def _neighbours(grid: list[list[int]], x: int, y: int) -> _abc.Generator[int]:
@@ -21,7 +21,11 @@ def _neighbours(grid: list[list[int]], x: int, y: int) -> _abc.Generator[int]:
             yield grid[x_][y_]
 
 
-def _steps(grid: list[list[int]], count: int=1, post: _t.Callable=None) -> list[list[int]]:
+def _steps(
+    grid: list[list[int]],
+    count: int = 1,
+    post: _t.Callable = None,
+) -> list[list[int]]:
     if count <= 0:
         return grid
 

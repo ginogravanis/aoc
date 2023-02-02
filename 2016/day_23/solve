@@ -4,6 +4,7 @@ import collections as _c
 import sys as _sys
 
 
+_DEBUG = False
 Cmd = tuple[str, ...]
 
 
@@ -38,7 +39,9 @@ def _optimise_add(program: list[Cmd], start: int, end: int) -> bool:
     if len(additions) != 2 or loop_counter_direction not in (-1, 1):
         return False
 
-    other, iterations = [(k, v) for k, v in additions.items() if k != loop_counter][0]
+    other, iterations = [
+        (k, v) for k, v in additions.items() if k != loop_counter
+    ][0]
     if iterations != 1:
         return False
 
@@ -78,7 +81,7 @@ def _optimise_mul(program: list[Cmd], start: int, end: int) -> bool:
 
 
 def _diff(program, optimised) -> str:
-    assert(len(program) == len(optimised))
+    assert len(program) == len(optimised)
     lines = [
         "     raw src        optimised",
         "     -------        ---------",
@@ -115,11 +118,10 @@ def _optimise(program: list[Cmd]) -> list[Cmd]:
                 if dist < 0:
                     (_optimise_add(optimised, i+dist, i)
                         or _optimise_mul(optimised, i+dist, i)
-                    )
+                     )
     return optimised
 
 
-_DEBUG = False
 def _run(program: list[Cmd], registers: dict[str, int], ic: int):
     optimised = _optimise(program)
     if _DEBUG:
@@ -144,7 +146,9 @@ def _run(program: list[Cmd], registers: dict[str, int], ic: int):
             registers[y] = 0
         elif cmd[0] == 'mul':
             _, x, y, z = cmd
-            registers[x] += int(registers.get(y, y)) * abs(int(registers.get(z, z)))
+            y_ = int(registers.get(y, y))
+            z_ = abs(int(registers.get(z, z)))
+            registers[x] += y_ * z_
             registers[z] = 0
         elif cmd[0] == 'jmp':
             _, x = cmd
@@ -162,7 +166,7 @@ def _run(program: list[Cmd], registers: dict[str, int], ic: int):
                 program[i] = _toggle(program[i])
                 optimised = _optimise(program)
         else:
-            assert(False)
+            assert False
         ic += 1
 
 
@@ -173,7 +177,7 @@ def _parse(line: str) -> Cmd:
 def solve1(filename: str) -> int:
     with open(filename) as file:
         program = [_parse(line) for line in file]
-    registers = { 'a': 7, 'b': 0, 'c': 0, 'd': 0 }
+    registers = {'a': 7, 'b': 0, 'c': 0, 'd': 0}
     _run(program, registers, 0)
     return registers['a']
 
@@ -181,7 +185,7 @@ def solve1(filename: str) -> int:
 def solve2(filename: str) -> int:
     with open(filename) as file:
         program = [_parse(line) for line in file]
-    registers = { 'a': 12, 'b': 0, 'c': 0, 'd': 0 }
+    registers = {'a': 12, 'b': 0, 'c': 0, 'd': 0}
     _run(program, registers, 0)
     return registers['a']
 

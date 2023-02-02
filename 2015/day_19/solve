@@ -43,7 +43,7 @@ def _invert_recipes(recipes: dict[str, str]) -> list[tuple[str, str]]:
     for pattern, subs in recipes.items():
         for sub in subs:
             new_recipes.append((sub, pattern))
-    return sorted(new_recipes, key=lambda x:len(x[0]), reverse=True)
+    return sorted(new_recipes, key=lambda x: len(x[0]), reverse=True)
 
 
 def solve2(filename: str) -> int:

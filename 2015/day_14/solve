@@ -7,9 +7,11 @@ import sys as _sys
 
 Reindeer = _c.namedtuple('Reindeer', ['name', 'speed', 'stamina', 'rest'])
 
+
 def _parse(line: str) -> Reindeer:
     name, speed, stamine, rest = _re.fullmatch(
-        '(\w+) can fly (\d+) km/s for (\d+) seconds, but then must rest for (\d+) seconds.',
+        r'(\w+) can fly (\d+) km/s for (\d+) seconds,'
+        r' but then must rest for (\d+) seconds.',
         line.strip(),
     ).groups()
     return Reindeer(

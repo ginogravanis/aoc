@@ -9,11 +9,11 @@ import typing as _t
 
 Pos: tuple[int, int] = _c.namedtuple(
     'Pos',
-    [ 'x', 'y' ],
+    ['x', 'y'],
 )
 Doors: tuple[bool, bool, bool, bool] = _c.namedtuple(
     'Doors',
-    [ 'up', 'down', 'left', 'right' ],
+    ['up', 'down', 'left', 'right'],
 )
 Path = str
 
@@ -76,7 +76,7 @@ def solve1(passcode: str) -> Path:
         for new_pos, new_path in _possible_moves(pos, path, passcode):
             nodes.put((len(new_path), new_path, new_pos))
 
-    assert(False)
+    assert False
 
 
 def solve2(passcode: str) -> int:

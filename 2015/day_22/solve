@@ -23,6 +23,7 @@ Battle: tuple[Character, Character, int, int, int, bool, bool] = _c.namedtuple(
     ],
 )
 
+
 def _magic_missile(battle: Battle) -> Battle:
     mana_cost = _spellbook[_magic_missile]
     boss = battle.boss._replace(hp=battle.boss.hp - 4)
@@ -157,7 +158,7 @@ def _change_turn(battle: Battle) -> Battle:
 
 
 @_ft.cache
-def _optimal_win(battle: Battle) -> tuple[int|None, list[_t.Callable]]:
+def _optimal_win(battle: Battle) -> tuple[int | None, list[_t.Callable]]:
     if _is_boss_dead(battle):
         return 0, []
 
@@ -176,7 +177,6 @@ def _optimal_win(battle: Battle) -> tuple[int|None, list[_t.Callable]]:
     if not battle.player_turn:
         return _optimal_win(_boss_attack(battle))
 
-
     castable_spells = [
         (spell, mana) for spell, mana in _spellbook.items()
         if battle.player.mana >= mana
@@ -184,7 +184,8 @@ def _optimal_win(battle: Battle) -> tuple[int|None, list[_t.Callable]]:
     ]
 
     scenarios = [
-        (*_optimal_win(spell(battle)), spell, mana) for spell, mana in castable_spells
+        (*_optimal_win(spell(battle)), spell, mana)
+        for spell, mana in castable_spells
     ]
 
     if all(best is None for best, _, _, _ in scenarios):
@@ -217,7 +218,6 @@ def _replay(battle: Battle, spells: list[_t.Callable]):
 
     if not battle.player_turn:
         return _replay(_boss_attack(battle), spells)
-
 
     if not spells:
         return battle

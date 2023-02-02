@@ -8,7 +8,7 @@ import sys as _sys
 
 Disc = _c.namedtuple(
     'Disc',
-    [ 'size', 'offset' ],
+    ['size', 'offset'],
 )
 
 
@@ -23,13 +23,15 @@ def _combine_discs(disc1: Disc, disc2: Disc) -> Disc:
 
 def _find_alignment(discs: list[Disc]) -> int:
     sorted_discs = sorted(discs, key=lambda d: d.size, reverse=True)
-    combined = _ft.reduce(_combine_discs, discs)
+    combined = _ft.reduce(_combine_discs, sorted_discs)
     return combined.size - combined.offset
 
 
 def _parse(line: str) -> Disc:
-    p=r'Disc #(\d) has (\d+) positions;.* it is at position (\d+).'
-    num, size, offset = [int(x) for x in _re.fullmatch(p, line.strip()).groups()]
+    p = r'Disc #(\d) has (\d+) positions;.* it is at position (\d+).'
+    num, size, offset = [
+        int(x) for x in _re.fullmatch(p, line.strip()).groups()
+    ]
     return Disc(size=size, offset=(offset + num) % size)
 
 

@@ -7,11 +7,14 @@ import sys as _sys
 import typing as _t
 
 
+T = _t.TypeVar('T')
 Pairing = _c.namedtuple('Pairing', ['person', 'neighbour', 'change'])
+
 
 def _parse(line: str) -> Pairing:
     person, sign, abs_change, neighbour = _re.fullmatch(
-        '(\w+) would (gain|lose) (\d+) happiness units by sitting next to (\w+).',
+        r'(\w+) would (gain|lose) (\d+) happiness units'
+        r' by sitting next to (\w+).',
         line.strip(),
     ).groups()
 
@@ -33,7 +36,6 @@ def _happiness_matrix(pairing: list[Pairing]) -> dict[str, dict[str, int]]:
     return people, happiness
 
 
-T = _t.TypeVar('T')
 def _happiest_seating(
     people: _c.abc.Iterable[T],
     happiness: dict[T, dict[T, int]]

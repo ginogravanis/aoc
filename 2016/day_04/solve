@@ -60,7 +60,7 @@ def solve2(filename: str) -> int:
         if 'northpole' in _decrypt(room.name, room.sector):
             return room.sector
     else:
-        assert(False)
+        assert False
 
 
 def usage():

@@ -5,7 +5,10 @@ import operator as _op
 import sys as _sys
 
 
-_literal = lambda x: x
+def _literal(x):
+    return x
+
+
 _invertop = ('NOT', _op.invert)
 _binops = {
     'AND': _op.and_,
@@ -13,9 +16,11 @@ _binops = {
     'LSHIFT': _op.lshift,
     'RSHIFT': _op.rshift,
 }
+Node = _c.namedtuple('Node', ['outgoing', 'incoming', 'val'])
+Expr = _c.namedtuple('Expr', ['inputs', 'op', 'output'])
 
 
-def _try_int(s: str) -> int|str:
+def _try_int(s: str) -> int | str:
     try:
         res = int(s)
     except ValueError:
@@ -23,10 +28,9 @@ def _try_int(s: str) -> int|str:
     return res
 
 
-Expr = _c.namedtuple('Expr', ['inputs', 'op', 'output'])
 def _parse(line: str) -> Expr:
     expr, output = line.strip().split(' -> ')
-    if (op:=_invertop[0]) in expr:
+    if (op := _invertop[0]) in expr:
         _, input = expr.split(f'{op} ')
         return Expr((_try_int(input),), _invertop[1], output)
 
@@ -39,8 +43,9 @@ def _parse(line: str) -> Expr:
     return Expr((_try_int(expr),), _literal, output)
 
 
-Node = _c.namedtuple('Node', ['outgoing', 'incoming', 'val'])
-def _topo_sort(nodes_by_incoming_edge: dict[str|None, set[Node]]) -> list[Node]:
+def _topo_sort(
+    nodes_by_incoming_edge: dict[str | None, set[Node]],
+) -> list[Node]:
     ordered = []
     available_outputs = set()
     queue = _c.deque(nodes_by_incoming_edge[None])
@@ -63,8 +68,8 @@ def _topo_sort(nodes_by_incoming_edge: dict[str|None, set[Node]]) -> list[Node]:
 def _eval(expr: Expr, env: dict[str, int]) -> dict[str, int]:
     inputs, op, output = expr
     val = op(*[env.get(i, i) for i in inputs])
-    val_16_bit = val % (1<<16)
-    return { output: val_16_bit }
+    val_16_bit = val % (1 << 16)
+    return {output: val_16_bit}
 
 
 def _make_nodes(connections):

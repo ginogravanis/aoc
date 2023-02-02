@@ -5,12 +5,16 @@ import sys as _sys
 
 def _dragon(data: str) -> str:
     data_reversed = ''.join(reversed(data))
-    suffix = data_reversed.replace('0', '.').replace('1', '0').replace('.', '1')
+    suffix = (data_reversed
+              .replace('0', '.')
+              .replace('1', '0')
+              .replace('.', '1')
+              )
     return data + '0' + suffix
 
 
 def _chksum(data: str) -> str:
-    assert(len(data) % 2 == 0)
+    assert len(data) % 2 == 0
     chksum = ''.join(
         [
             '1' if data[2*i] == data[2*i+1] else '0'

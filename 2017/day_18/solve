@@ -1,0 +1,103 @@
+#!/usr/bin/env python
+
+import collections as _c
+import multiprocessing.pool as _mp
+import queue as _q
+import sys as _sys
+
+
+def _val(v: str | int, regs: dict[str, int]) -> int:
+    try:
+        return int(v)
+    except ValueError:
+        return regs[v]
+
+
+def _run(
+    pid: int,
+    program: list[list[str]],
+    q_in: _q.Queue,
+    q_out: _q.Queue,
+):
+    registers = _c.defaultdict(int, {'p': pid})
+    ic = 0
+    snd_count = 0
+    freq = None
+
+    while 0 <= ic < len(program):
+        cmd = program[ic]
+        if cmd[0] == 'snd':
+            freq = _val(cmd[1], registers)
+            if q_out:
+                q_out.put(_val(cmd[1], registers))
+            snd_count += 1
+        elif cmd[0] == 'set':
+            registers[cmd[1]] = _val(cmd[2], registers)
+        elif cmd[0] == 'add':
+            registers[cmd[1]] += _val(cmd[2], registers)
+        elif cmd[0] == 'mul':
+            registers[cmd[1]] *= _val(cmd[2], registers)
+        elif cmd[0] == 'mod':
+            registers[cmd[1]] %= _val(cmd[2], registers)
+        elif cmd[0] == 'rcv':
+            if q_in:
+                try:
+                    registers[cmd[1]] = q_in.get(timeout=5)
+                except _q.Empty:
+                    return snd_count
+            elif registers[cmd[1]] != 0:
+                return freq
+        elif cmd[0] == 'jgz':
+            if _val(cmd[1], registers) > 0:
+                ic += _val(cmd[2], registers)
+                continue
+        ic += 1
+
+    return snd_count
+
+
+def _load(filename: str) -> list[list[str]]:
+    with open(filename) as file:
+        return [line.split() for line in file.read().splitlines()]
+
+
+def solve1(filename: str) -> int:
+    program = _load(filename)
+    return _run(0, program, None, None)
+
+
+def solve2(filename: str) -> int:
+    program = _load(filename)
+    pool = _mp.ThreadPool(processes=2)
+
+    q0 = _q.Queue()
+    q1 = _q.Queue()
+
+    process0 = pool.apply_async(_run, (0, program, q0, q1))
+    process1 = pool.apply_async(_run, (1, program, q1, q0))
+
+    process0.get()
+    return process1.get()
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

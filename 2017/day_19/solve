@@ -1,0 +1,94 @@
+#!/usr/bin/env python
+
+import sys as _sys
+
+
+def _load(filename: str) -> list[str]:
+    with open(filename) as file:
+        return file.read().splitlines()
+
+
+def _move(x: int, y: int, move_horizontal: bool, d: int) -> tuple[int, int]:
+    if move_horizontal:
+        return x+d, y
+    else:
+        return x, y+d
+
+
+def _turn(x: int, y: int, move_horizontal: bool, maze: list[str]) -> int:
+    if move_horizontal:
+        char = maze[y][x-1]
+        if char == '-' or char.isalpha():
+            return -1
+
+        char = maze[y][x+1]
+        if char == '-' or char.isalpha():
+            return 1
+
+        assert False
+    else:
+        char = maze[y-1][x]
+        if char == '|' or char.isalpha():
+            return -1
+
+        char = maze[y+1][x]
+        if char == '|' or char.isalpha():
+            return 1
+
+        assert False
+
+
+def _traverse(maze: list[str]) -> tuple[int, str]:
+    route = []
+    x = maze[0].index('|')
+    y = 0
+    d = 1
+    move_horizontal = False
+    steps = 0
+    while True:
+        x, y = _move(x, y, move_horizontal, d)
+        steps += 1
+        char = maze[y][x]
+        if not char.strip():
+            break
+        elif char == '+':
+            move_horizontal = not move_horizontal
+            d = _turn(x, y, move_horizontal, maze)
+        elif char.isalpha():
+            route.append(char)
+    return steps, ''.join(route)
+
+
+def solve1(filename: str) -> str:
+    maze = _load(filename)
+    _, route = _traverse(maze)
+    return route
+
+
+def solve2(filename: str) -> int:
+    maze = _load(filename)
+    steps, _ = _traverse(maze)
+    return steps
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

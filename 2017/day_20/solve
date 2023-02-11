@@ -1,0 +1,99 @@
+#!/usr/bin/env python
+
+import collections as _c
+import sys as _sys
+
+
+Coord: tuple[int, int, int] = _c.namedtuple(
+    'Coord',
+    ['x', 'y', 'z'],
+)
+Particle: tuple[Coord, Coord, Coord] = _c.namedtuple(
+    'Particle',
+    ['pos', 'vel', 'accel'],
+)
+
+
+def _parse(line: str) -> Particle:
+    p_raw, v_raw, a_raw = line.strip().split()
+    p = Coord(*(int(x) for x in p_raw[2:].strip('<>,').split(',')))
+    v = Coord(*(int(x) for x in v_raw[2:].strip('<>,').split(',')))
+    a = Coord(*(int(x) for x in a_raw[2:].strip('<>,').split(',')))
+    return Particle(pos=p, vel=v, accel=a)
+
+
+def _load(filename: str) -> list[Particle]:
+    with open(filename) as file:
+        return [_parse(line) for line in file]
+
+
+def _velocity(part: Particle) -> int:
+    return sum(abs(x) for x in part.accel)
+
+
+def _advance(p: Particle) -> Particle:
+    vel = Coord(
+        x=p.vel.x + p.accel.x,
+        y=p.vel.y + p.accel.y,
+        z=p.vel.z + p.accel.z,
+    )
+    pos = Coord(
+        x=p.pos.x + vel.x,
+        y=p.pos.y + vel.y,
+        z=p.pos.z + vel.z,
+    )
+    return Particle(pos=pos, vel=vel, accel=p.accel)
+
+
+def _resolve_collisions(ps: list[Particle]) -> list[Particle]:
+    p_count = len(ps)
+    steps_unchanged = 0
+    while True:
+        collisions = _c.defaultdict(list)
+        for p in ps:
+            new_p = _advance(p)
+            collisions[new_p.pos].append(new_p)
+        ps = [coll[0] for coll in collisions.values() if len(coll) == 1]
+
+        if len(ps) < p_count:
+            p_count = len(ps)
+            steps_unchanged = 0
+        else:
+            steps_unchanged += 1
+        if steps_unchanged > 20:
+            return ps
+
+
+def solve1(filename: str) -> int:
+    ps = _load(filename)
+    _, part_index = min((_velocity(p), i) for i, p in enumerate(ps))
+    return part_index
+
+
+def solve2(filename: str) -> int:
+    particles = _load(filename)
+    remaining = _resolve_collisions(particles)
+    return len(remaining)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

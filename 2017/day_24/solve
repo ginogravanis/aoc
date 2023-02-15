@@ -1,0 +1,100 @@
+#!/usr/bin/env python
+
+import sys as _sys
+
+
+Part = tuple[int, int]
+
+
+def _parse(line: str) -> Part:
+    return tuple(int(val) for val in line.split('/'))
+
+
+def _load(filename: str) -> set[Part]:
+    with open(filename) as file:
+        return set(_parse(line) for line in file)
+
+
+def _bridge_strength(parts: set[Part]) -> int:
+    return sum(sum(part) for part in parts)
+
+
+def _possible_next(pins: int, parts: set[Part]) -> Part:
+    for part in parts:
+        if pins in part:
+            yield part
+
+
+def _strongest_bridge(
+    pins: int,
+    parts: set[Part],
+) -> tuple[int, list[Part]]:
+    max_strength = 0
+    strongest_bridge = []
+    for part in _possible_next(pins, parts):
+        connector = part[1] if part[0] == pins else part[0]
+        remaining_parts = parts - {part}
+        strength, bridge = _strongest_bridge(connector, remaining_parts)
+        current_strength = strength + sum(part)
+        if current_strength > max_strength:
+            max_strength = strength + sum(part)
+            strongest_bridge = [part] + bridge
+    return max_strength, strongest_bridge
+
+
+def _longest_bridge(
+    pins: int,
+    parts: set[Part],
+) -> tuple[int, list[Part]]:
+    best_weight = 0
+    longest_bridge = []
+    for part in _possible_next(pins, parts):
+        connector = part[1] if part[0] == pins else part[0]
+        remaining_parts = parts - {part}
+        strength, bridge = _longest_bridge(connector, remaining_parts)
+        current_bridge = [part] + bridge
+        if (
+            len(current_bridge) > len(longest_bridge)
+            or (
+                len(current_bridge) == len(longest_bridge)
+                and strength > best_weight
+            )
+        ):
+            best_weight = strength + sum(part)
+            longest_bridge = [part] + bridge
+    return best_weight, longest_bridge
+
+
+def solve1(filename: str) -> int:
+    parts = _load(filename)
+    strength, _ = _strongest_bridge(0, parts)
+    return strength
+
+
+def solve2(filename: str) -> int:
+    parts = _load(filename)
+    strength, _ = _longest_bridge(0, parts)
+    return strength
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

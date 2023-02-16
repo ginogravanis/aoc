@@ -1,0 +1,114 @@
+#!/usr/bin/env python
+
+import collections as _c
+import re as _re
+import sys as _sys
+
+
+Action: tuple[int, int, str] = _c.namedtuple(
+    'Action',
+    ['output', 'direction', 'next_state'],
+)
+Rule = dict[int, Action]
+Tape = set[int]
+Machine: tuple[str, Tape, int, dict[str, Rule]] = _c.namedtuple(
+    'Machine',
+    ['state', 'tape', 'cursor', 'rules'],
+)
+
+
+def _parse_preamble(lines: list[str]) -> tuple[str, int]:
+    assert len(lines) == 2
+    init_state, = _re.findall(r'state (.)', lines[0])
+    steps, = _re.findall(r'after (.*) steps', lines[1])
+    return init_state, int(steps)
+
+
+def _parse_action(lines: list[str]) -> tuple[int, Action]:
+    assert len(lines) == 4
+    current_val, = _re.findall(r'current value is (.)', lines[0])
+    output, = _re.findall(r'value (.)', lines[1])
+    direction, = _re.findall(r'to the (.*)\.', lines[2])
+    next_state, = _re.findall(r'state (.)', lines[3])
+    return (
+        int(current_val),
+        Action(
+            output=int(output),
+            direction=(1 if direction == 'right' else -1),
+            next_state=next_state,
+        ),
+    )
+
+
+def _parse_rule(lines: list[str]) -> tuple[str, Rule]:
+    assert len(lines) == 9
+    state, = _re.findall(r'state (.)', lines[0])
+    rule = {}
+    for start in range(1, len(lines), 4):
+        current_val, action = _parse_action(lines[start:start+4])
+        rule[current_val] = action
+    return state, rule
+
+
+def _load(filename: str) -> Machine:
+    with open(filename) as file:
+        raw = file.read().split('\n\n')
+    init_state, steps = _parse_preamble(raw[0].splitlines())
+    rules = [_parse_rule(state.splitlines()) for state in raw[1:]]
+    return (
+        Machine(
+            state=init_state,
+            tape=set(),
+            cursor=0,
+            rules={state: rule for state, rule in rules},
+        ),
+        steps,
+    )
+
+
+def _single_step(machine: Machine) -> Machine:
+    current_val = int(machine.cursor in machine.tape)
+    action = machine.rules[machine.state][current_val]
+    if action.output:
+        tape = machine.tape | {machine.cursor}
+    else:
+        tape = machine.tape - {machine.cursor}
+
+    return machine._replace(
+        state=action.next_state,
+        cursor=machine.cursor + action.direction,
+        tape=tape,
+    )
+
+
+def solve1(filename: str) -> int:
+    machine, steps = _load(filename)
+    for i in range(steps):
+        machine = _single_step(machine)
+        status_steps = int(1e5)
+        if i % status_steps == 0:
+            print(f'{i//status_steps}/{steps//status_steps}')
+    return len(machine.tape)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print('Suddenly, everything seems a lot less pixelated than before.')
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

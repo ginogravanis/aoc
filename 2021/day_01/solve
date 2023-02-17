@@ -1,0 +1,45 @@
+#!/usr/bin/env python
+
+import sys as _sys
+
+
+def _load(filename: str) -> list[int]:
+    with open(filename) as file:
+        return [int(line) for line in file.read().splitlines()]
+
+
+def solve1(filename: str) -> int:
+    depths = _load(filename)
+    return sum(1 for x, y in zip(depths[:-1], depths[1:]) if y > x)
+
+
+def solve2(filename: str) -> int:
+    depths = _load(filename)
+    increases = 0
+    for i in range(len(depths) - 3):
+        if sum(depths[i:i+3]) < sum(depths[i+1:i+4]):
+            increases += 1
+    return increases
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

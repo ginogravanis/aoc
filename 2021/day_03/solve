@@ -1,0 +1,72 @@
+#!/usr/bin/env python
+
+import sys as _sys
+import typing as _t
+
+
+def _binary_digit_frequency(nums: list[str]) -> list[int]:
+    digit_frequency = [0] * len(nums[0])
+    for num in nums:
+        for i, digit in enumerate(num):
+            digit_frequency[i] += int(digit)
+    return digit_frequency
+
+
+def _rate(digit_frequency: list[int], pred: _t.Callable) -> str:
+    return ''.join(
+        '1' if pred(freq) else '0' for freq in digit_frequency
+    )
+
+
+def _rating(report: list[str], rating_digits: tuple[int, int]) -> int:
+    x, y = rating_digits
+    candidates = set(report)
+    for i in range(len(report[0])):
+        digit_frequency = _binary_digit_frequency(list(candidates))
+        digit = x if digit_frequency[i] >= len(candidates) / 2 else y
+        new_candidates = {c for c in candidates if c[i] == str(digit)}
+        candidates = new_candidates
+        if len(candidates) == 1:
+            return int(candidates.pop(), base=2)
+    assert False
+
+
+def solve1(filename: str) -> int:
+    with open(filename) as file:
+        report = file.read().splitlines()
+    digit_frequency = _binary_digit_frequency(report)
+    threshold = len(report) // 2
+    gamma_rate = _rate(digit_frequency, lambda x: x > threshold)
+    epsilon_rate = _rate(digit_frequency, lambda x: x <= threshold)
+    return int(gamma_rate, base=2) * int(epsilon_rate, base=2)
+
+
+def solve2(filename: str) -> int:
+    with open(filename) as file:
+        report = file.read().splitlines()
+    oxygen_rating = _rating(report, (1, 0))
+    co2_rating = _rating(report, (0, 1))
+    return oxygen_rating * co2_rating
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,101 @@
+#!/usr/bin/env python
+
+import collections as _c
+import sys as _sys
+import typing as _t
+
+
+Coord: tuple[int, int] = _c.namedtuple(
+    'Coord',
+    ['x', 'y'],
+)
+LineSeg: tuple[Coord, Coord] = _c.namedtuple(
+    'LineSeg',
+    ['start', 'end'],
+)
+
+
+def _parse_point(spec: str) -> Coord:
+    return Coord(
+        *(int(n) for n in spec.split(','))
+    )
+
+
+def _parse_line_seg(line: str) -> LineSeg:
+    points = (_parse_point(p) for p in line.split(' -> '))
+    return LineSeg(*points)
+
+
+def _load(filename: str) -> list[LineSeg]:
+    with open(filename) as file:
+        return [_parse_line_seg(line) for line in file.read().splitlines()]
+
+
+def _is_straight(line_seg: LineSeg) -> bool:
+    return (
+        line_seg.start.x == line_seg.end.x
+        or line_seg.start.y == line_seg.end.y
+    )
+
+
+def _slope(a: int, b: int) -> int:
+    if a > b:
+        return -1
+    elif a < b:
+        return 1
+    else:
+        return 0
+
+
+def _grid_points(line_seg: LineSeg) -> _t.Generator[None, None, Coord]:
+    dx = _slope(line_seg.start.x, line_seg.end.x)
+    dy = _slope(line_seg.start.y, line_seg.end.y)
+    point = line_seg.start
+    yield point
+    while point != line_seg.end:
+        point = Coord(
+            x=point.x + dx,
+            y=point.y + dy,
+        )
+        yield point
+
+
+def solve1(filename: str) -> int:
+    line_segments = [
+        line for line in _load(filename) if _is_straight(line)
+    ]
+    points = _c.Counter()
+    for line_seg in line_segments:
+        points.update(_grid_points(line_seg))
+    return sum(1 for _, count in points.items() if count > 1)
+
+
+def solve2(filename: str) -> int:
+    line_segments = _load(filename)
+    points = _c.Counter()
+    for line_seg in line_segments:
+        points.update(_grid_points(line_seg))
+    return sum(1 for _, count in points.items() if count > 1)
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

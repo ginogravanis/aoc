@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+
+import collections as _c
+import sys as _sys
+
+
+_PREGNANCY_DURATION = 7
+_MATURATION_TIME = 2
+
+
+def _load(filename) -> _c.Counter:
+    with open(filename) as file:
+        fish = file.read().strip().split(',')
+        return _c.Counter(int(f) + 1 for f in fish)
+
+
+def _simulate(population: _c.Counter):
+    for birth_delay in range(1, 10):
+        population[birth_delay-1] = population[birth_delay]
+        population[birth_delay] = 0
+    births = population[0]
+    population[0] = 0
+    population[_PREGNANCY_DURATION] += births
+    population[_PREGNANCY_DURATION + _MATURATION_TIME] += births
+
+
+def solve1(filename: str) -> int:
+    school = _load(filename)
+    for _ in range(80):
+        _simulate(school)
+    return school.total()
+
+
+def solve2(filename: str) -> int:
+    school = _load(filename)
+    for _ in range(256):
+        _simulate(school)
+    return school.total()
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

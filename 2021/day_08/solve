@@ -1,0 +1,150 @@
+#!/usr/bin/env python
+
+import collections as _c
+import sys as _sys
+
+
+Display: tuple[tuple[str], tuple[str]] = _c.namedtuple(
+    'Display',
+    ['alphabet', 'output'],
+)
+
+
+_wire_pattern = {
+    0: 'abcefg',
+    1: 'cf',
+    2: 'acdeg',
+    3: 'acdfg',
+    4: 'bcdf',
+    5: 'abdfg',
+    6: 'abdefg',
+    7: 'acf',
+    8: 'abcdefg',
+    9: 'abcdfg',
+}
+_digit = {v: k for k, v in _wire_pattern.items()}
+_all_segments = _wire_pattern[8]
+
+
+def _parse(line: str) -> Display:
+    alphabet, output = line.split(' | ')
+    return Display(
+        alphabet=tuple(alphabet.split()),
+        output=tuple(output.split()),
+    )
+
+
+def _load(filename: str) -> list[Display]:
+    with open(filename) as file:
+        return [_parse(line) for line in file]
+
+
+"""
+Algorithm to determine segments
+
+Count in how many digits each segment appears. Three segments can be uniquely
+identified by that count:
+b: 6
+e: 4
+f: 9
+
+1 is the only 2-segment digit; its remaining unidentified segment is c.
+
+7 is the only 3-segment digit; its remaining unidentified segment is a.
+
+4 is the only 4-segment digit; its remaining unidentified segment is d.
+
+The last unidentified segment is g.
+"""
+def _determine_rewiring(alphabet: tuple[str]) -> dict[str, str]:
+    rewiring = {}
+    wire_frequency = {}
+    condensed_alphabet = ''.join(alphabet)
+    for wire in _all_segments:
+        wire_frequency[condensed_alphabet.count(wire)] = wire
+    rewiring[wire_frequency[6]] = 'b'
+    rewiring[wire_frequency[4]] = 'e'
+    rewiring[wire_frequency[9]] = 'f'
+
+    wire_count = {
+        len(wired_digit): wired_digit
+        for wired_digit in alphabet
+    }
+    seg_c = (set(wire_count[2]) - set(rewiring.keys())).pop()
+    rewiring[seg_c] = 'c'
+
+    seg_a = (set(wire_count[3]) - set(rewiring.keys())).pop()
+    rewiring[seg_a] = 'a'
+
+    seg_d = (set(wire_count[4]) - set(rewiring.keys())).pop()
+    rewiring[seg_d] = 'd'
+
+    seg_g = (set(_all_segments) - set(rewiring.keys())).pop() 
+    rewiring[seg_g] = 'g'
+
+    return rewiring
+
+
+def _rewire_output(output: tuple[str], rewiring: dict[str, str]) -> tuple[str]:
+    rewired_output = []
+    for digit_pattern in output:
+        rewired_pattern = ''.join(sorted(rewiring[wire] for wire in digit_pattern))
+        rewired_output.append(rewired_pattern)
+    return tuple(rewired_output)
+
+
+def _translate_output(output: tuple[str]) -> int:
+    return int(
+        ''.join(str(_digit[wire_pattern]) for wire_pattern in output)
+    )
+
+
+def _read_output(display: Display) -> int:
+    rewired_output = _rewire_output(
+        display.output,
+        _determine_rewiring(display.alphabet),
+    )
+    return _translate_output(rewired_output)
+
+
+def solve1(filename: str) -> int:
+    displays = _load(filename)
+    found_digits = 0
+    segment_counts = {
+        len(_wire_pattern[1]),
+        len(_wire_pattern[4]),
+        len(_wire_pattern[7]),
+        len(_wire_pattern[8]),
+    }
+    for display in displays:
+        for segments in display.output:
+            if len(segments) in segment_counts:
+                found_digits += 1
+    return found_digits
+
+
+def solve2(filename: str) -> int:
+    displays = _load(filename)
+    return sum(_read_output(display) for display in displays)
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,111 @@
+#!/usr/bin/env python
+
+import collections as _c
+import sys as _sys
+import typing as _t
+
+
+HeightMap = tuple[tuple[int]]
+Coord : tuple[int, int] = _c.namedtuple(
+    'Coord',
+    ['x', 'y'],
+)
+Location : tuple[Coord, int] = _c.namedtuple(
+    'Location',
+    ['coord', 'val'],
+)
+
+
+def _parse_line(line: str) -> tuple[int]:
+    return tuple(int(digit) for digit in line)
+
+
+def _load(filename: str) -> HeightMap:
+    with open(filename) as file:
+        lines = file.read().split()
+    return tuple(_parse_line(line.strip()) for line in lines)
+
+
+def _neighbours(pos: Coord, heightmap: HeightMap) -> _t.Generator[Location, None, None]:
+    if pos.y - 1 >= 0:
+        yield Location(
+            coord=Coord(x=pos.x, y=pos.y-1),
+            val=heightmap[pos.y-1][pos.x],
+        )
+    if pos.x + 1 < len(heightmap[pos.y]):
+        yield Location(
+            coord=Coord(x=pos.x+1, y=pos.y),
+            val=heightmap[pos.y][pos.x+1],
+        )
+    if pos.y + 1 < len(heightmap):
+        yield Location(
+            coord=Coord(x=pos.x, y=pos.y+1),
+            val=heightmap[pos.y+1][pos.x],
+        )
+    if pos.x - 1 >= 0:
+        yield Location(
+            coord=Coord(x=pos.x-1, y=pos.y),
+            val=heightmap[pos.y][pos.x-1],
+        )
+
+
+def _find_low_points(heightmap: HeightMap) -> _t.Generator[Location, None, None]:
+    for y, row in enumerate(heightmap):
+        for x, col in enumerate(row):
+            val = heightmap[y][x]
+            coord = Coord(x=x, y=y)
+            if all(
+                val < neighbour.val for neighbour
+                in _neighbours(coord, heightmap)
+                ):
+                yield Location(coord=coord, val=val)
+
+
+def _basin(low_point: Location, heightmap: HeightMap) -> int:
+    queue = _c.deque([low_point])
+    visited = set()
+    while queue:
+        loc = queue.pop()
+        if loc in visited or loc.val == 9:
+            continue
+        queue.extend(_neighbours(loc.coord, heightmap))
+        visited.add(loc)
+    return len(visited)
+
+
+def solve1(filename: str) -> int:
+    heightmap = _load(filename)
+    return sum(loc.val + 1 for loc in _find_low_points(heightmap))
+
+
+def solve2(filename: str) -> int:
+    heightmap = _load(filename)
+    basins = [
+        _basin(loc, heightmap)
+        for loc in _find_low_points(heightmap)
+    ]
+    a, b, c = sorted(basins)[-3:]
+    return a*b*c
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()

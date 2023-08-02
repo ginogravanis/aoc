@@ -1,0 +1,115 @@
+#!/usr/bin/env python
+
+import collections as _c
+import enum as _enum
+import sys as _sys
+
+
+_invalid_char_score: dict[str, int] = {
+    ')': 3,
+    ']': 57,
+    '}': 1197,
+    '>': 25137,
+}
+_missing_char_score: dict[str, int] = {
+    ')': 1,
+    ']': 2,
+    '}': 3,
+    '>': 4,
+}
+_openers: dict[str, str] = {
+    '(': ')',
+    '[': ']',
+    '{': '}',
+    '<': '>',
+}
+_closers: dict[str, str] = {v: k for k, v in _openers.items()}
+
+
+class NavState(_enum.Enum):
+    VALID = 1
+    INCOMPLETE = 2
+    CORRUPT = 3
+
+
+Result: tuple[NavState, str] = _c.namedtuple(
+    'Result',
+    ['state', 'detail'],
+)
+
+
+def _load(filename: str) -> list[str]:
+    with open(filename) as file:
+        return file.read().split()
+
+
+def _check(line: str) -> Result:
+    stack = []
+    for char in line:
+        if char in _openers:
+            stack.append(char)
+        elif char in _closers:
+            if stack[-1] == _closers[char]:
+                stack.pop()
+            else:
+                return Result(state=NavState.CORRUPT, detail=char)
+        else:
+            assert False, f"Invalid character '{char}'"
+
+    if stack:
+        completion = ''.join(_openers[char] for char in stack[::-1])
+        return Result(state=NavState.INCOMPLETE, detail=completion)
+
+    return Result(state=NavState.VALID, detail='')
+
+
+def _score_corruption(result: Result) -> int:
+    if result.state is not NavState.CORRUPT:
+        return 0
+    return _invalid_char_score[result.detail]
+
+
+def _score_completion(result: Result) -> int:
+    score = 0
+    if result.state is NavState.INCOMPLETE:
+        for char in result.detail:
+            score = score * 5 + _missing_char_score[char]
+    return score
+
+
+def solve1(filename: str) -> int:
+    nav_lines = _load(filename)
+    return sum(_score_corruption(_check(line)) for line in nav_lines)
+
+
+def solve2(filename: str) -> int:
+    nav_lines = _load(filename)
+    results = [_check(line) for line in nav_lines]
+    scores = sorted(
+        _score_completion(res) for res in results
+        if res.state == NavState.INCOMPLETE
+    )
+    return scores[len(scores) // 2]
+
+
+def usage():
+    print(f"usage: {_sys.argv[0]} 1|2 FILE")
+
+
+def main():
+    if len(_sys.argv) != 3:
+        return usage()
+
+    part = _sys.argv[1]
+    filename = _sys.argv[2]
+
+    if part == '1':
+        print(solve1(filename))
+    elif part == '2':
+        print(solve2(filename))
+    else:
+        return usage()
+
+
+if __name__ == '__main__':
+    main()
